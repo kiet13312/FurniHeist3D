@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>FurniHeist3D</title>
+<style>
+:root{--glass:#111827dd;--gold:#ffd166;--mint:#5ce1b6}*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#91d5df;color:white;font:600 14px system-ui,Arial}canvas{display:block;width:100vw;height:100vh;touch-action:none}#hud{position:fixed;inset:0;pointer-events:none}.panel{background:var(--glass);border:1px solid #ffffff2b;border-radius:15px;padding:11px 14px;box-shadow:0 6px 22px #10203033;backdrop-filter:blur(7px)}#top{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap}#top b{color:var(--gold)}#mission{position:absolute;top:12px;right:12px;max-width:240px;line-height:1.5}#shop{position:absolute;right:12px;top:105px;width:230px;pointer-events:auto;max-height:65vh;overflow:auto}button{border:0;border-radius:10px;background:linear-gradient(135deg,#ffe08a,#ffb938);color:#342100;font-weight:800;padding:9px 11px;cursor:pointer;width:100%;margin-top:6px}button:disabled{opacity:.4}#hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}#controls{position:absolute;bottom:15px;left:15px;display:none;gap:7px;pointer-events:auto}#controls button{width:54px;height:50px;background:#172033cc;color:white;border:1px solid #ffffff55;margin:0;font-size:19px}#act{position:absolute;bottom:22px;right:18px;width:90px;height:68px;border-radius:50%;pointer-events:auto;background:#5ce1b6;color:#073c31}#toast{position:absolute;top:80px;left:50%;transform:translateX(-50%);background:#111827ed;padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .2s}#toast.show{opacity:1}#help{position:absolute;left:12px;bottom:12px;font-size:11px;opacity:.75}h3{margin:0 0 6px;color:var(--gold)}.small{font-size:11px;color:#d0dae7;font-weight:500}@media(max-width:700px){#controls{display:flex}#help{display:none}#shop{top:auto;bottom:92px;right:10px;width:175px;max-height:43vh;font-size:12px}#mission{max-width:165px;font-size:11px}#top{max-width:58vw;font-size:12px}#hint{bottom:78px;font-size:12px}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+ <div id="top"><div class="panel">🪙 <b id="coins">250</b></div><div class="panel">⚡ Speed <b id="speed">1.0</b></div><div class="panel">🏃 Treadmill <b id="level">Lv.1</b></div><div class="panel">🪑 Carry <b id="carry">None</b></div></div>
+ <div id="mission" class="panel">🎯 <b>Furni Heist</b><br>Steal furniture from the plaza, bring it home, and decorate your house.<div class="small">Earn coins to upgrade your treadmill to level 10.</div></div>
+ <div id="shop" class="panel"><h3>🏃 Treadmill shop</h3><div id="shoptext"></div><button id="upgrade">Upgrade treadmill</button><button id="shoes">Buy speed shoes · 180</button><button id="bag">Upgrade carry bag · 250</button><div class="small">Stand on the treadmill pad and hold E / TRAIN to gain speed.</div></div>
+ <div id="hint" class="panel">WASD move · E interact · Take furniture from the plaza and return to your house</div>
+ <div id="help">WASD move · Shift sprint · E pick up / deliver / decorate · Mouse drag to rotate view</div>
+ <div id="controls"><button data-move="forward">▲</button><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div>
+ <button id="act">PICK UP</button><div id="toast"></div>
+</div>
+<script>
+(()=>{
+const c=document.getElementById('game'),ctx=c.getContext('2d');let W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;c.width=W*DPR;c.height=H*DPR;c.style.width=W+'px';c.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',resize);resize();
+const $=id=>document.getElementById(id);
+const keys={},player={x:0,z:7,dir:0,carry:null,speed:1,coins:250,level:1,shoes:0,bag:1,placed:[],train:0};
+const prices=[0,120,220,400,650,1000,1600,2500,4000,6500],gain=[1,1.25,1.6,2,2.5,3.1,3.8,4.6,5.5,6.6],names=['Wooden Chair','Floor Lamp','Side Table','Sofa','Television','Fridge','Double Bed','Golden Cabinet','Luxury Piano','Royal Throne'];
+const values=[45,60,85,130,180,240,330,480,700,1200],colors=['#b97746','#f3d56c','#9a6c49','#c56d62','#2b3340','#a7c3cc','#536d9c','#c58e42','#8d69bb','#f2bb45'];
+let furniture=[],npcs=[],mouseDown=false,lastX=0,camAngle=0,camZoom=1,toastTimer;
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),1800)}
+function makeFurn(i,x,z){return {i,x,z,taken:false,placed:false,phase:Math.random()*6}}
+for(let i=0;i<10;i++)furniture.push(makeFurn(i,-7+(i%5)*3.5,-3-Math.floor(i/5)*2.2));
+for(let i=0;i<3;i++)npcs.push({x:8+i*2,z:-3-i*2,phase:i*2,carry:null});
+function project(x,y,z){let a=camAngle,dx=x-player.x,dz=z-player.z,rx=dx*Math.cos(a)-dz*Math.sin(a),rz=dx*Math.sin(a)+dz*Math.cos(a);let focal=Math.min(W,H)*.9*camZoom,depth=rz+12;depth=Math.max(1.2,depth);return {x:W/2+rx*focal/depth,y:H*.48+(y-1.5)*focal/depth+focal*.5/depth,scale:focal/depth,depth}}
+function poly(points,fill,stroke){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}}
+function box3(x,y,z,w,h,d,col){let pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y+h,z-d/2],[x-w/2,y+h,z-d/2],[x-w/2,y,z+d/2],[x+w/2,y,z+d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]].map(p=>project(...p));poly([pts[0],pts[1],pts[2],pts[3]],shade(col,.82));poly([pts[1],pts[5],pts[7],pts[2]],shade(col,.68));poly([pts[3],pts[2],pts[7],pts[6]],shade(col,1.16));poly([pts[4],pts[5],pts[7],pts[6]],shade(col,.75));}
+function shade(hex,m){let n=parseInt(hex.slice(1),16),r=Math.min(255,((n>>16)&255)*m),g=Math.min(255,((n>>8)&255)*m),b=Math.min(255,(n&255)*m);return 'rgb('+r+','+g+','+b+')'}
+function ground(){poly([project(-35,0,-30),project(35,0,-30),project(35,0,40),project(-35,0,40)],'#80bf73');for(let x=-30;x<=30;x+=2){let a=project(x,.005,-25),b=project(x,.005,30);ctx.strokeStyle='#ffffff12';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}for(let z=-25;z<=30;z+=2){let a=project(-30,.005,z),b=project(30,.005,z);ctx.strokeStyle='#ffffff12';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+ box3(0,.02,-2,19,.06,14,'#b5b7b9');box3(0,.1,-2,18,.04,13,'#d6d7d9');
+ // road
+ box3(0,.04,5,3,.05,28,'#777f8b');
+ // home
+ box3(-10,.1,9,8,3,7,'#f3dfb9');box3(-10,3.1,9,8,.25,7,'#b85e4d');box3(-10,4.2,9,8,2,7,'#b85e4d');box3(-10,1.4,5.45,1.4,2.6,.15,'#8c593f');box3(-12,1.5,5.4,1.4,1.2,.2,'#72c6e7');
+ // treadmill platform and running belt
+ box3(5,.18,7,3.2,.28,2.3,'#303948');box3(5,.34,7,2.65,.07,1.75,'#4c596b');box3(5,.65,6.05,.16,.75,.16,'#e2b84d');box3(5.7,1,6.05,1.5,.1,.15,'#e2b84d');
+ // central shop kiosk
+ box3(0,.1,-7,4,2.3,2.2,'#f0a64c');box3(0,2.5,-7,4.5,.25,2.5,'#d75e4d');label3('FURNITURE PLAZA',0,3.1,-7,'#fff2c9');
+}
+function label3(text,x,y,z,color='#fff'){let p=project(x,y,z);ctx.font='bold '+Math.max(9,Math.min(19,p.scale*.13))+'px system-ui';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#1b2734';ctx.strokeText(text,p.x,p.y);ctx.fillStyle=color;ctx.fillText(text,p.x,p.y)}
+function furnitureDraw(f){let x=f.x,z=f.z;if(f.placed){let slot=f.slot;x=-12+(slot%3)*2;z=7+Math.floor(slot/3)*2}let y=f.placed?.25:.2;const i=f.i,col=colors[i];if(i===0){box3(x,y,z,.8,.5,.8,col);box3(x,y+.5,z-.32,.8,.65,.16,col);for(let dx of [-.3,.3])for(let dz of [-.3,.3])box3(x+dx,y-.25,z+dz,.09,.5,.09,'#75452c')}
+else if(i===1){box3(x,y,z,.18,1.2,.18,'#7d674b');box3(x,y+1.25,z,.7,.25,.7,col)}
+else if(i===2){box3(x,y,z,.9,.55,.7,col);box3(x,y-.25,z,.12,.5,.12,'#67452f')}
+else if(i===3){box3(x,y,z,.9,.55,.65,col);box3(x,y+.45,z-.23,.9,.5,.18,col);box3(x-.4,y+.2,z,.15,.45,.7,shade(col,.8));box3(x+.4,y+.2,z,.15,.45,.7,shade(col,.8))}
+else if(i===4){box3(x,y,z,.95,.65,.16,'#242a33');box3(x,y+.05,z+.1,.8,.5,.02,'#67cbe6');box3(x,y-.4,z,.12,.3,.12,'#333b46')}
+else if(i===5){box3(x,y,z,.75,1.25,.7,col);box3(x,y+.2,z+.36,.04,.08,.02,'#3e5860');box3(x,y-.35,z+.36,.04,.08,.02,'#3e5860')}
+else if(i===6){box3(x,y,z,1.4,.35,1.9,col);box3(x,y+.2,z-.72,1.35,.25,.35,'#f7e8d2')}
+else if(i===7||i===9){box3(x,y,z,.8,1.2,.6,col);box3(x,y+ .65,z,.85,.15,.65,shade(col,1.2))}
+else{box3(x,y,z,1.2,.5,.8,col);box3(x,y+.5,z,.9,.5,.4,shade(col,.8));box3(x,y+1,z,.12,.2,.12,'#272c39')}
+if(!f.placed)label3(names[i]+' · '+values[i],x,y+1.2,z,'#fff6cf')}
+function character(x,z,col,isPlayer=false){box3(x,.15,z,.62,.85,.42,col);box3(x,1,z,.43,.43,.43,isPlayer?'#ffddb6':'#edc29c');box3(x,.6,z+.25,.16,.55,.16,'#263447');if(isPlayer)label3('YOU',x,1.7,z,'#ffffff')}
+function render(){ctx.clearRect(0,0,W,H);let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#75cce8');sky.addColorStop(.58,'#d6eff0');sky.addColorStop(.59,'#8ecb83');sky.addColorStop(1,'#6aa965');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);ground();let all=[...furniture.map(f=>({z:f.z,draw:()=>furnitureDraw(f)})),...npcs.map(n=>({z:n.z,draw:()=>character(n.x,n.z,'#c84f66')})),{z:player.z,draw:()=>character(player.x,player.z,'#416fe5',true)}];if(player.carry)all.push({z:player.z,draw:()=>{let p=project(player.x,1.5,player.z);ctx.fillStyle=colors[player.carry.i];ctx.fillRect(p.x-12,p.y-12,24,20)}});all.sort((a,b)=>b.z-a.z).forEach(o=>o.draw());label3('YOUR HOME',-10,4.6,4.7,'#fff5d6');label3('TREADMILL · LV '+player.level,5,1.6,7,'#fff1b2');label3('TAKE FURNITURE',0,3.1,-8.4,'#fff');updateUI();requestAnimationFrame(render)}
+function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
+function nearHome(){return player.x < -5.5 && player.z>4&&player.z<14}
+function nearTread(){return Math.hypot(player.x-5,player.z-7)<2.1}
+function nearestFurniture(){let candidates=furniture.filter(f=>!f.taken&&!f.placed).sort((a,b)=>dist(player,a)-dist(player,b));return candidates[0]&&dist(player,candidates[0])<2.2?candidates[0]:null}
+function act(){if(player.carry&&nearHome()){let f=player.carry;player.carry=null;f.taken=true;f.placed=false;furniture.push(makeFurn(f.i,-7+(f.i%5)*3.5,-3-Math.floor(f.i/5)*2.2));player.coins+=values[f.i];player.placed.push({i:f.i,slot:player.placed.length%6});toast('Delivered '+names[f.i]+' +'+values[f.i]+' coins!');return}
+ if(player.carry&&nearHome()){return}
+ if(!player.carry&&nearHome()&&player.placed.length){let slot=player.placed.length%6;let item=player.placed[player.placed.length-1];item.slot=slot;item.placed=true;toast('Furniture placed in your house!');return}
+ let f=nearestFurniture();if(f&&!player.carry){f.taken=true;player.carry=f;toast('Picked up '+names[f.i]+'! Bring it home.');return}
+ if(nearTread()){player.train=1;toast('Treadmill active! Hold E / TRAIN to train.');return}
+ toast('Get close to furniture, your house, or the treadmill.')}
+function updateUI(){$('coins').textContent=Math.floor(player.coins);$('speed').textContent=player.speed.toFixed(1);$('level').textContent='Lv.'+player.level;$('carry').textContent=player.carry?names[player.carry.i]:'None';let next=player.level<10?prices[player.level]:'MAX';$('shoptext').innerHTML='Level '+player.level+'/10<br>Speed multiplier: ×'+gain[player.level-1]+'<br>Next level: '+(next==='MAX'?'MAX LEVEL':next+' coins');$('upgrade').textContent=player.level>=10?'Treadmill MAX':'Upgrade · '+prices[player.level]+' coins';$('upgrade').disabled=player.level>=10||player.coins<prices[player.level];$('shoes').disabled=player.shoes>0||player.coins<180;$('bag').disabled=player.bag>1||player.coins<250;$('act').textContent=player.train&&nearTread()?'TRAIN':'PICK UP'}
+$('upgrade').onclick=()=>{if(player.level>=10)return;let p=prices[player.level];if(player.coins<p)return toast('Not enough coins!');player.coins-=p;player.level++;player.speed=1+(player.level-1)*.35+player.shoes*.5;toast('Treadmill upgraded to level '+player.level+'!')};
+$('shoes').onclick=()=>{if(player.shoes||player.coins<180)return;player.coins-=180;player.shoes=1;player.speed+=.5;toast('Speed shoes equipped!')};
+$('bag').onclick=()=>{if(player.bag>1||player.coins<250)return;player.coins-=250;player.bag=2;toast('Carry bag upgraded!')};
+$('act').onclick=()=>{if(nearTread()){player.speed+=.08;player.train=1;toast('Training! Speed +0.08')}else act()};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();if(e.key.toLowerCase()==='e')act()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.querySelectorAll('[data-move]').forEach(b=>{let k={forward:'w',back:'s',left:'a',right:'d'}[b.dataset.move];b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+c.addEventListener('pointerdown',e=>{mouseDown=true;lastX=e.clientX});addEventListener('pointerup',()=>mouseDown=false);addEventListener('pointermove',e=>{if(mouseDown&&e.pointerType==='mouse'){camAngle+=(e.clientX-lastX)*.004;lastX=e.clientX}});
+let last=performance.now();function tick(now){let dt=Math.min(.04,(now-last)/1000);last=now;let vx=0,vz=0;if(keys.w||keys.arrowup)vz-=1;if(keys.s||keys.arrowdown)vz+=1;if(keys.a||keys.arrowleft)vx-=1;if(keys.d||keys.arrowright)vx+=1;let mag=Math.hypot(vx,vz)||1;let boost=keys.shift?1.4:1;player.x+=vx/mag*player.speed*boost*dt*4;player.z+=vz/mag*player.speed*boost*dt*4;player.x=Math.max(-22,Math.min(22,player.x));player.z=Math.max(-15,Math.min(24,player.z));if(nearTread()&&(keys.e||keys[' '])){player.speed=Math.min(12,player.speed+dt*.22*gain[player.level-1]);player.train=1}else player.train=0;requestAnimationFrame(tick)}requestAnimationFrame(tick);render();
+})();
+</script>
+</body></html>
