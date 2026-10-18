@@ -13,10 +13,12 @@ A lightweight browser 3D-style furniture heist game made with plain HTML, CSS, J
 ## Run locally
 Open `index.html` in a modern browser.
 
-## Publish with GitHub Pages
+## Build and publish
+This is a static browser game, so it does not need a compiler or APK build. The GitHub Actions workflow deploys `index.html` to GitHub Pages whenever `main` changes.
+
 1. Open **Settings → Pages** in this repository.
-2. Under **Build and deployment**, choose **GitHub Actions**.
-3. Pushes to `main` will publish the game using `.github/workflows/pages.yml`.
+2. Under **Build and deployment**, choose **GitHub Actions** if it is not already selected.
+3. The published game URL is: https://kiet13312.github.io/FurniHeist3D/
 
 ## Controls
 - **WASD / arrow keys:** move
