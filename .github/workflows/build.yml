@@ -1,0 +1,53 @@
+name: Build FurniHeist3D
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate HTML and JavaScript
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          html = Path("index.html").read_text(encoding="utf-8")
+          assert re.search(r"<!doctype html>", html, re.I), "Missing HTML doctype"
+          assert re.search(r'<canvas[^>]+id=["\']game["\']', html), "Game canvas missing"
+          scripts = re.findall(r"<script[^>]*>([\\s\\S]*?)</script>", html, re.I)
+          assert scripts, "No inline game script found"
+          Path("/tmp/furniheist3d.js").write_text(scripts[-1], encoding="utf-8")
+          print(f"Validated index.html ({len(html)} characters)")
+          PY
+          node --check /tmp/furniheist3d.js
+
+      - name: Package browser game
+        run: |
+          mkdir -p dist
+          cp index.html README.md dist/
+          cd dist
+          zip -r ../FurniHeist3D-web.zip .
+
+      - name: Upload playable web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: FurniHeist3D-web-build
+          path: FurniHeist3D-web.zip
+          if-no-files-found: error
+          retention-days: 14
