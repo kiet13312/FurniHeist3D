@@ -30,7 +30,7 @@ jobs:
           html = Path("index.html").read_text(encoding="utf-8")
           assert re.search(r"<!doctype html>", html, re.I), "Missing HTML doctype"
           assert re.search(r'<canvas[^>]+id=["\']game["\']', html), "Game canvas missing"
-          scripts = re.findall(r"<script[^>]*>([\\s\\S]*?)</script>", html, re.I)
+          scripts = re.findall(r"<script[^>]*>([\s\S]*?)</script>", html, re.I)
           assert scripts, "No inline game script found"
           Path("/tmp/furniheist3d.js").write_text(scripts[-1], encoding="utf-8")
           print(f"Validated index.html ({len(html)} characters)")
