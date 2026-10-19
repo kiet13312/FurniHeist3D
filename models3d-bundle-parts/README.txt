@@ -1,0 +1,1 @@
+The 17 GLB files are packed as zstd-compressed ZIP -> base64 text split into part000.txt through part023.txt. The Android Actions workflow concatenates these files, decodes/unpacks the archive, verifies 17 .glb files, then builds the APK. Keep all 24 parts and their numeric order.

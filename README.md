@@ -1,38 +1,20 @@
-# FurniHeist3D
+# FurniHeist3D — 3D version
 
-A landscape Android game built around a lightweight 3D-style furniture-heist playground. The game logic and drawing are bundled locally in the APK, so gameplay does not need an internet connection.
+The game renders with Three.js/WebGL and loads the supplied 17 GLB files: the full map, player, treadmill, 9 furniture models and 5 monsters. The APK workflow reconstructs the packed model bundle into the Android asset directory before compiling, so the GLB files are included in the APK.
 
 ## Gameplay
-- Explore the plaza and collect furniture.
-- Bring furniture to your home to earn coins.
-- Place collected furniture in your house; each placed item earns passive coins.
-- Upgrade the treadmill up to level 10 and train to run faster.
-- Buy speed shoes and a carry-bag upgrade.
-- Landscape layout with on-screen movement buttons for touchscreens.
+- Explore five guarded furniture zones.
+- Pick furniture up, carry it home and sell it for coins.
+- Place furniture in the house to earn passive income.
+- Upgrade the treadmill to level 10, buy speed shoes and expand the carry bag.
+- Touch joystick, interact button and drag-to-rotate camera for mobile play.
 
-## Build an APK on GitHub
-Every push to `main` runs the Android build workflow.
+## Build APK
+Every push to `main` starts **Build FurniHeist3D 3D Android APK**. Open the repository's **Actions** tab and download the `FurniHeist3D-3D-APK` artifact from the latest successful run.
 
-1. Open the repository's **Actions** tab.
-2. Open the latest **Build FurniHeist3D Android APK** run.
-3. Under **Artifacts**, download `FurniHeist3D-debug-apk`.
-4. Extract the ZIP and install `app-debug.apk` on Android. Allow installation from the file manager/browser if Android asks.
-
-You can also trigger the workflow manually from Actions using **Run workflow**.
-
-## Build locally
-Use JDK 17, Android SDK Platform 35 and Gradle 8.9, then run:
-
-```sh
-gradle :app:assembleDebug
-```
-
-APK output: `app/build/outputs/apk/debug/app-debug.apk`.
+The renderer loads the Three.js ES modules from jsDelivr, so the device needs internet access to load the engine. The 17 GLB assets are packaged locally in the APK.
 
 ## Controls
-- Desktop: WASD / arrow keys to move; Shift to sprint; E to interact; drag mouse to rotate the view.
-- Mobile: use the on-screen movement arrows and action button.
-- On the treadmill: hold E or Space to train.
-
-## Scope
-This is an offline single-player prototype with a custom canvas renderer. It is not a Roblox project and does not include online multiplayer or cloud saves.
+- Desktop: WASD / arrow keys, Shift to sprint, E to interact, drag to rotate.
+- Mobile: use the joystick and INTERACT button.
+- Hold INTERACT while on the treadmill to train.

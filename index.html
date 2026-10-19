@@ -1,519 +1,69 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>FurniHeist3D</title>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><title>FurniHeist3D</title>
 <style>
-:root{--glass:#111827eF;--gold:#ffd166;--mint:#5ce1b6}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bd8e9;color:#fff;font:600 14px system-ui,Arial;overscroll-behavior:none}
-canvas{display:block;width:100vw;height:100dvh;touch-action:none}
-#hud{position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-.panel{background:var(--glass);border:1px solid #ffffff28;border-radius:15px;padding:9px 12px;box-shadow:0 5px 20px #12203328;backdrop-filter:blur(8px)}
-#top{position:absolute;left:10px;top:10px;display:flex;gap:7px;max-width:70vw;flex-wrap:wrap}
-#top b{color:var(--gold)}
-#mission{position:absolute;right:10px;top:10px;width:270px;line-height:1.45}
-#shop{position:absolute;right:10px;top:132px;width:270px;max-height:calc(100dvh - 225px);overflow:auto;pointer-events:auto}
-button{border:0;border-radius:10px;background:linear-gradient(135deg,#ffe08a,#ffb938);color:#342100;font-weight:800;padding:9px 10px;cursor:pointer;width:100%;margin-top:6px;touch-action:manipulation}
-button:disabled{opacity:.4}
-h3{margin:0 0 6px;color:var(--gold)}
-.small{font-size:11px;color:#d0dae7;font-weight:500}
-#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);text-align:center;max-width:52vw;white-space:normal}
-#toast{position:absolute;top:90px;left:50%;transform:translateX(-50%);background:#111827ed;padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .2s;max-width:75vw;text-align:center}
-#toast.show{opacity:1}
-#help{position:absolute;left:12px;bottom:10px;font-size:11px;opacity:.76}
-#stick{display:block;position:absolute;left:20px;bottom:20px;width:145px;height:145px;border-radius:50%;background:#10182799;border:2px solid #ffffff68;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 0 14px #ffffff0b}
-#stick:before{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#ffffff50;transform:translate(-50%,-50%)}
-#nub{position:absolute;width:61px;height:61px;left:40px;top:40px;border-radius:50%;background:#eaf6ffda;border:3px solid #ffffffb8;box-shadow:0 4px 14px #0005;transform:translate(0,0)}
-#stickLabel{position:absolute;left:0;right:0;bottom:-20px;text-align:center;font-size:10px;color:white;text-shadow:0 1px 4px #000}
-#act{position:absolute;right:20px;bottom:25px;width:100px;height:78px;border-radius:50%;background:var(--mint);color:#073c31;font-size:13px;pointer-events:auto;box-shadow:0 5px 16px #0003;touch-action:none}
-#act:active{transform:scale(.96)}
-#crosshair{position:absolute;left:50%;top:50%;width:7px;height:7px;transform:translate(-50%,-50%);border-radius:50%;background:#ffffffd9;box-shadow:0 0 0 2px #14202c55;pointer-events:none}
-@media (pointer:coarse),(max-width:1000px){
- #stick{display:block}
- #help{display:none}
- #hint{display:none}
- #top{max-width:calc(100vw - 16px);gap:5px;right:4px}
- #top .panel{padding:7px 9px;font-size:12px}
- #mission{right:8px;top:74px;width:min(205px,30vw);font-size:11px;padding:7px 9px;max-height:18vh;overflow:hidden}
- #shop{right:8px;top:auto;bottom:102px;width:min(205px,30vw);max-height:37dvh;font-size:11px;padding:7px 9px}
- #shop button{padding:8px 6px;font-size:11px}
- #act{right:18px;bottom:18px;width:76px;height:64px}
- #toast{top:65px}
-}
-@media (max-width:540px){
- #mission{width:42vw;right:6px;top:80px}
- #shop{width:42vw;right:6px;bottom:96px;max-height:42dvh}
- #stick{width:124px;height:124px;left:14px;bottom:18px}
- #nub{width:53px;height:53px;left:33px;top:33px}
- #act{right:14px;bottom:16px;width:78px;height:64px;font-size:11px}
-}
-</style>
-</head>
-<body>
-<canvas id="game" aria-label="Furni Heist game"></canvas>
-<div id="hud">
- <div id="top">
-  <div class="panel">🪙 <b id="coins">250</b></div>
-  <div class="panel">⚡ Speed <b id="speed">1.0</b></div>
-  <div class="panel">🏃 Treadmill <b id="level">Lv.1</b></div>
-  <div class="panel">🪑 Carry <b id="carry">None</b></div>
-  <div class="panel">🗺️ <b id="zone">Plaza</b></div>
- </div>
- <div id="mission" class="panel">🎯 <b>Furni Heist</b><br>Grab furniture at the plaza, bring it home, and decorate your house.<div class="small">Get coins and upgrade your speed. Your placed furniture earns income.</div></div>
- <div id="shop" class="panel"><h3>🏃 Treadmill shop</h3><div id="shoptext"></div><button id="upgrade">Upgrade · 120 coins</button><button id="shoes">Buy speed shoes · 180</button><button id="bag">Upgrade carry bag · 250</button>
-<button id="decorate">🛠 Decorate mode: OFF</button>
-<div id="decorOptions" style="display:none">
- <div class="small" id="decorStatus">No furniture selected</div>
- <button id="decorNext">Select next furniture</button>
- <button id="decorMove">Move to next slot</button>
- <button id="decorRotate">Rotate selected</button>
- <button id="decorStore">Store selected</button>
-</div>
-<div class="small">Use the treadmill to train. Higher treadmill levels unlock guarded zones.</div></div>
- <div id="hint" class="panel">Move with WASD / arrows or the joystick · E / INTERACT to pick up, deliver and decorate</div>
- <div id="help">WASD / arrows move · Shift sprint · E interact · Drag the right side to rotate camera</div>
- <div id="stick"><div id="nub"></div><div id="stickLabel">MOVE</div></div>
- <button id="act">INTERACT</button>
- <div id="crosshair"></div>
- <div id="toast"></div>
-</div>
-<script>
-(()=> {
-'use strict';
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
-const $=id=>document.getElementById(id);
-let W=innerWidth,H=innerHeight,DPR=1;
-function resize(){W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);DPR=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
-addEventListener('resize',resize);resize();
-const keys={};
-const prices=[0,120,220,400,650,1000,1600,2500,4000,6500];
-const gain=[1,1.25,1.6,2,2.5,3.1,3.8,4.6,5.5,6.6];
-const names=['Wooden Chair','Floor Lamp','Side Table','Sofa','Television','Fridge','Double Bed','Golden Cabinet','Luxury Piano','Royal Throne'];
-const values=[45,60,85,130,180,240,330,480,700,1200];
-const colors=['#b97746','#f3d56c','#9a6c49','#c56d62','#2b3340','#a7c3cc','#536d9c','#c58e42','#8d69bb','#f2bb45'];
-const zones=[
- {level:1,required:1,name:'Mouse Yard',monster:'MOUSE',z:-15,items:[0,1],color:'#6fc7a1',speed:1.15},
- {level:2,required:3,name:'Baby Block',monster:'BABY',z:-23,items:[2,3],color:'#78b7e8',speed:1.4},
- {level:3,required:5,name:'Cat Corner',monster:'CAT',z:-31,items:[4,5],color:'#e7bd63',speed:1.65},
- {level:4,required:7,name:'Mom Mansion',monster:'MOM',z:-39,items:[6,7],color:'#d77c92',speed:1.9},
- {level:5,required:9,name:'Dad Fortress',monster:'DAD',z:-47,items:[8,9],color:'#b49aff',speed:2.15}
-];
-let furnitureTransform=null,decorateMode=false,selectedDecorIndex=0,gateToastClock=0;
-const player={x:0,z:3,yaw:0,speed:1,coins:250,level:1,shoes:0,bag:1,carry:null,carryExtra:null,inventory:[],train:false};
-let camYaw=0,stickX=0,stickY=0,walking=0,elapsed=0,saveClock=0,incomeClock=0,toastTimer=0,spawnIndex=0,camDrag=false,dragX=0,dragY=0;
-function saveGame(){try{localStorage.setItem('furniHeistSaveV2',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,inventory:player.inventory,spawnIndex,decorateMode}))}catch(e){}}
-try{let old=JSON.parse(localStorage.getItem('furniHeistSaveV2')||localStorage.getItem('furniHeistSave')||'null');if(old){player.coins=Number(old.coins??250);player.speed=Number(old.speed??1);player.level=Math.max(1,Math.min(10,Number(old.level??1)));player.shoes=Number(old.shoes??0);player.bag=Math.max(1,Math.min(2,Number(old.bag??1)));player.inventory=Array.isArray(old.inventory)?old.inventory:(Array.isArray(old.placed)?old.placed:[]);spawnIndex=Number(old.spawnIndex||0);decorateMode=!!old.decorateMode}}catch(e){}
-function toast(text){const el=$('toast');el.textContent=text;el.classList.add('show');toastTimer=performance.now()+1800}
-function d2(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
-function homeArea(){return player.x>-15.1&&player.x<-5.2&&player.z>3.3&&player.z<13.3}
-function treadmillArea(){return Math.hypot(player.x-6,player.z-3.5)<2.3}
-function makeF(i,x,z,zone=0){return {i,x,z,spawnX:x,spawnZ:z,zone,taken:false}}
-let furniture=[];
-for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1,0));
-zones.forEach(zone=>zone.items.forEach((item,j)=>furniture.push(makeF(item,j===0?-4:4,zone.z+(j===0?-1.6:1.6),zone.level))));
-const guards=zones.map(zone=>({zone,x:Math.sin(zone.level*2)*2,z:zone.z,yaw:Math.PI,patrol:0}));
-const camera={x:0,y:0,z:0,dx:0,dy:0,dz:0,rx:1,rz:0,ux:0,uy:1,uz:0,focal:1};
-function prepareCamera(){
- const s=Math.sin(camYaw),c=Math.cos(camYaw);
- const tx=player.x+s*1.0,tz=player.z-c*1.0,ty=1.25;
- camera.x=player.x-s*5.2;camera.y=3.65;camera.z=player.z+c*5.2;
- let dx=tx-camera.x,dy=ty-camera.y,dz=tz-camera.z,L=Math.hypot(dx,dy,dz)||1;
- dx/=L;dy/=L;dz/=L;camera.dx=dx;camera.dy=dy;camera.dz=dz;
- camera.rx=c;camera.rz=s;
- const u=rycross(camera.rx,camera.rz,dx,dy,dz);
- camera.ux=u[0];camera.uy=u[1];camera.uz=u[2];camera.focal=Math.min(W,H)*1.32;
-}
-function project(x,y,z){
- const ax=x-camera.x,ay=y-camera.y,az=z-camera.z;
- const sx=ax*camera.rx+az*camera.rz;
- const sy=ax*camera.ux+ay*camera.uy+az*camera.uz;
- const depth=ax*camera.dx+ay*camera.dy+az*camera.dz,d=Math.max(.2,depth),f=camera.focal;
- return {x:W*.5+sx*f/d,y:H*.47-sy*f/d,depth,scale:f/d};
-}
-function rycross(rx,rz,dx,dy,dz){return [-rz*dy,rz*dx-rx*dz,rx*dy]}
-function polyWorld(points,color,stroke=null){
- // Clip surfaces crossing the camera near plane; this prevents long floors and walls
- // from exploding into large black polygons when their far corner is behind the camera.
- const near=.28,src=points.map(p=>({p,d:project(p[0],p[1],p[2]).depth})),out=[];
- for(let i=0;i<src.length;i++){
-  const cur=src[i],prev=src[(i+src.length-1)%src.length],ci=cur.d>=near,pi=prev.d>=near;
-  if(ci!==pi){
-   const t=(near-prev.d)/(cur.d-prev.d);
-   out.push({p:[prev.p[0]+(cur.p[0]-prev.p[0])*t,prev.p[1]+(cur.p[1]-prev.p[1])*t,prev.p[2]+(cur.p[2]-prev.p[2])*t],d:near});
-  }
-  if(ci)out.push(cur);
- }
- if(out.length<3)return;
- const ps=out.map(o=>project(o.p[0],o.p[1],o.p[2]));
- if(ps.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))return;
- ctx.beginPath();ps.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
-}
-function shade(hex,m){let n=parseInt(hex.slice(1),16),r=Math.min(255,((n>>16)&255)*m),g=Math.min(255,((n>>8)&255)*m),b=Math.min(255,(n&255)*m);return 'rgb('+r+','+g+','+b+')'}
-function box(x,y,z,w,h,d,col,yaw=0){
- if(furnitureTransform){const tr=furnitureTransform,dx=x-tr.x,dz=z-tr.z,c0=Math.cos(tr.rot),s0=Math.sin(tr.rot);x=tr.x+dx*c0+dz*s0;z=tr.z-dx*s0+dz*c0;yaw+=tr.rot}
- const c=Math.cos(yaw),s=Math.sin(yaw);
- const world=(lx,ly,lz)=>[x+lx*c+lz*s,y+ly,z+lx*s-lz*c];
- const v=[
- world(-w/2,0,-d/2),world(w/2,0,-d/2),world(w/2,h,-d/2),world(-w/2,h,-d/2),
- world(-w/2,0,d/2),world(w/2,0,d/2),world(w/2,h,d/2),world(-w/2,h,d/2)
- ];
- const faces=[
-  {v:[0,1,2,3],c:shade(col,.78)},
-  {v:[1,5,6,2],c:shade(col,.62)},
-  {v:[4,5,6,7],c:shade(col,.72)},
-  {v:[0,4,7,3],c:shade(col,.85)},
-  {v:[3,2,6,7],c:shade(col,1.13)}
- ];
- faces.sort((a,b)=>{const dep=f=>f.v.reduce((s,i)=>s+project(...v[i]).depth,0)/f.v.length;return dep(b)-dep(a)}).forEach(f=>polyWorld(f.v.map(i=>v[i]),f.c));
-}
-function label(text,x,y,z,color='#fff4cf'){
- const p=project(x,y,z);if(p.depth<.7||p.scale<5||p.x<-150||p.x>W+150||p.y<-80||p.y>H+80)return;
- const size=Math.max(9,Math.min(18,p.scale*.12));ctx.font='bold '+size+'px system-ui';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#17202bd9';ctx.strokeText(text,p.x,p.y);ctx.fillStyle=color;ctx.fillText(text,p.x,p.y);
-}
-function ground(){
- const tiles=[];
- const sx=Math.floor(player.x/4),sz=Math.floor(player.z/4);
- for(let ix=sx-6;ix<=sx+6;ix++)for(let iz=sz-10;iz<=sz+5;iz++){
-  const x=ix*4,z=iz*4,corners=[[x,0,z],[x+4,0,z],[x+4,0,z+4],[x,0,z+4]],ps=corners.map(p=>project(...p));
-  if(ps.some(p=>p.depth<.3))continue;
-  tiles.push({z:ps.reduce((n,p)=>n+p.depth,0)/4,corners,col:((ix+iz)&1)?'#80bd74':'#78b76e'});
- }
- tiles.sort((a,b)=>b.z-a.z);
- for(const t of tiles)polyWorld(t.corners,t.col);
- // walkway leading through the furniture plaza
- box(0,.015,-3,3.6,.06,34,'#8b9298');
- box(0,.05,-6,23,.1,12,'#c2c6c9');
- box(0,.105,-6,21.6,.025,10.6,'#d9dadd');
- for(let z=-18;z<19;z+=4){box(0,.051,z,3.7,.015,.09,'#f3d777')}
-}
-function drawHouse(){
- box(-10,.1,8,8.2,.18,8.2,'#dfc9a6');
- box(-10,.25,8,7.4,2.9,7.1,'#e9d9b9');
- // roof slab and front gable accents
- box(-10,3.15,8,8,.35,7.7,'#a95043');
- box(-10,3.48,8,7.5,.13,7.2,'#c96a53');
- box(-10,.28,4.42,1.35,2.55,.16,'#795038');
- box(-12.05,1.35,4.39,1.18,1.08,.13,'#78cbe9');
- box(-7.95,1.35,4.39,1.18,1.08,.13,'#78cbe9');
- box(-10,2.9,4.37,1.9,.14,.14,'#78523a');
- label('YOUR HOME',-10,4.1,4.1,'#fff0ca');
- // interior floor/rug makes the place visibly a home
- box(-10,.3,8,5.9,.035,5.7,'#c69c70');
- box(-10,.34,8,3.7,.025,3.8,'#d6b890');
-}
-function tree(x,z){
- box(x,0,z,.28,1.5,.28,'#795138');
- const p=project(x,2.0,z),r=Math.max(8,p.scale*.53);
- if(p.depth>0.5&&p.x>-100&&p.x<W+100&&p.y>-100&&p.y<H+100){
-  ctx.fillStyle='#397f4b';ctx.beginPath();ctx.ellipse(p.x,p.y,r*1.1,r*.8,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#4b9c58';ctx.beginPath();ctx.ellipse(p.x-r*.18,p.y-r*.2,r*.65,r*.47,0,0,Math.PI*2);ctx.fill();
- }
-}
-function drawTreadmill(){
- box(6,.06,3.5,3.5,.35,2.6,'#303948');
- box(6,.42,3.5,2.9,.07,2.0,'#566477');
- for(let k=0;k<7;k++)box(4.85+k*.38,.465,3.5,.035,.015,1.8,'#1f2937');
- box(6.1,.52,2.35,.18,.85,.18,'#e2b84d');
- box(6.85,.91,2.35,1.55,.12,.16,'#e2b84d');
- label('TREADMILL · LV '+player.level,6,1.65,3.1,'#fff1b2');
-}
-function plaza(){
- box(0,.16,-6,4.8,2.1,2.1,'#eda852');
- box(0,2.27,-6,5.1,.22,2.4,'#c75445');
- label('FURNITURE PLAZA',0,2.9,-7.25,'#fff2c9');
-}
-function drawFurniture(f){
- const x=f.x,z=f.z,i=f.i,col=colors[i],y=.18;
- const previousTransform=furnitureTransform;furnitureTransform={x,z,rot:Number(f.rot)||0};
- if(i===0){box(x,y,z,.8,.5,.8,col);box(x,y+.5,z-.31,.8,.62,.16,col);for(const dx of [-.3,.3])for(const dz of [-.3,.3])box(x+dx,y-.0,z+dz,.09,.48,.09,'#75452c')}
- else if(i===1){box(x,y,z,.18,1.2,.18,'#7d674b');box(x,y+1.2,z,.74,.22,.74,col)}
- else if(i===2){box(x,y,z,.9,.5,.7,col);for(const dx of [-.34,.34])for(const dz of [-.23,.23])box(x+dx,y-.0,z+dz,.08,.45,.08,'#67452f')}
- else if(i===3){box(x,y,z,.95,.54,.72,col);box(x,y+.48,z-.25,.95,.48,.18,col);box(x-.4,y+.18,z,.16,.43,.72,shade(col,.8));box(x+.4,y+.18,z,.16,.43,.72,shade(col,.8))}
- else if(i===4){box(x,y,z,.95,.67,.16,'#242a33');box(x,y+.1,z-.09,.79,.45,.025,'#67cbe6');box(x,y-.03,z+.12,.12,.26,.16,'#333b46')}
- else if(i===5){box(x,y,z,.75,1.25,.7,col);box(x,y+.2,z-.36,.035,.08,.025,'#3e5860');box(x,y+.55,z-.36,.035,.08,.025,'#3e5860')}
- else if(i===6){box(x,y,z,1.4,.35,1.9,col);box(x,y+.22,z-.72,1.35,.23,.35,'#f7e8d2')}
- else if(i===7){box(x,y,z,.8,1.2,.6,col);box(x,y+1.2,z,.85,.12,.65,shade(col,1.2));box(x-.2,y+.4,z-.31,.04,.12,.02,'#ffdf8a');box(x+.2,y+.4,z-.31,.04,.12,.02,'#ffdf8a')}
- else if(i===8){box(x,y,z,1.2,.5,.8,col);box(x,y+.5,z,.9,.5,.4,shade(col,.8));box(x,y+1,z,.12,.2,.12,'#272c39')}
- else{box(x,y,z,.9,.65,.75,col);box(x,y+.65,z,.95,.14,.82,shade(col,1.18));box(x,y+.72,z-.3,.65,.55,.15,col);box(x-.43,y,z,.12,.5,.75,shade(col,.75));box(x+.43,y,z,.12,.5,.75,shade(col,.75))}
- label(names[i]+' · '+values[i],x,y+1.42,z,'#fff8de');
- furnitureTransform=previousTransform;
-}
-function drawPlaced(item){
- const slot=Number(item.slot)||0,x=-11.7+(slot%3)*1.7,z=6.3+Math.floor(slot/3)*1.7;
- const copy={...item,x,z};drawFurniture(copy);
- if(decorateMode&&selectedDecoration()===item)label('SELECTED',x,2.05,z,'#5ce1b6');
-}
-function drawPlayer(){
- const yaw=player.yaw,walk=Math.sin(walking*10)*.22*(Math.abs(stickX)+Math.abs(stickY)>.12?1:0);
- function part(lx,baseY,lz,w,h,d,color,ang= yaw){const c=Math.cos(ang),s=Math.sin(ang);box(player.x+lx*c+lz*s,baseY,player.z+lx*s-lz*c,w,h,d,color,ang)}
- // Classic blocky Roblox bacon-hair avatar: yellow head/arms, blue torso, green legs.
- const bob=Math.abs(walk)*.24;
- const p=project(player.x,.02,player.z);
- if(p.depth>0.5){ctx.fillStyle='#182b2b55';ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(10,p.scale*.30),Math.max(4,p.scale*.11),0,0,Math.PI*2);ctx.fill()}
- // Green legs with a clear alternating walk cycle.
- part(-.19,.35+Math.max(0,walk)*.38,-walk*.25,.25,.70,.29,'#16a34a');
- part(.19,.35+Math.max(0,-walk)*.38,walk*.25,.25,.70,.29,'#16a34a');
- // Classic blue shirt and yellow arms.
- part(0,1.02-bob,0,.68,.72,.39,'#1685e5');
- part(-.43,.96-bob,-walk,.22,.70,.23,'#ffd34d');
- part(.43,.96-bob,walk,.22,.70,.23,'#ffd34d');
- // Yellow square head.
- part(0,1.77-bob,0,.52,.52,.49,'#ffd34d');
- // Brown layered bacon hair fringe, side locks and back strands.
- part(0,2.035-bob,-.015,.57,.15,.54,'#5a301b');
- part(-.18,1.99-bob,-.255,.20,.20,.10,'#6b381d');
- part(0,1.96-bob,-.285,.18,.24,.10,'#87451f');
- part(.16,2.00-bob,-.255,.18,.18,.10,'#4b2919');
- part(-.21,1.88-bob,-.17,.12,.25,.13,'#6b381d');
- part(.22,1.89-bob,-.15,.11,.22,.13,'#5a301b');
- // Simple visible face on the front.
- part(-.115,1.79-bob,-.252,.065,.075,.025,'#252525');
- part(.115,1.79-bob,-.252,.065,.075,.025,'#252525');
- part(0,1.68-bob,-.26,.12,.035,.025,'#a65330');
- if(player.carry){const item=player.carry;part(.48,1.20,-.25,.34,.32,.28,colors[item.i]);if(player.carryExtra)part(-.48,1.2,-.25,.32,.3,.28,colors[player.carryExtra.i])}
- label('YOU',player.x,2.4,player.z,'#ffffff');
-}
-function drawFountain(){
- box(8.5,.04,-6,3.2,.28,3.2,'#6b7c91');
- box(8.5,.32,-6,2.65,.12,2.65,'#9fb6c5');
- box(8.5,.41,-6,2.1,.08,2.1,'#48b8db');
- box(8.5,.5,-6,.28,.8,.28,'#d3d9e0');
- const p=project(8.5,1.2,-6),r=Math.max(4,p.scale*.12);
- if(p.depth>.3){ctx.fillStyle='#8feaff';ctx.beginPath();ctx.ellipse(p.x,p.y,r*.55,r,0,0,Math.PI*2);ctx.fill()}
- label('FOUNTAIN',8.5,1.35,-6,'#eafaff');
-}
-function drawZoneGates(){
- for(const zone of zones){
-  const gateZ=zone.z+4,open=player.level>=zone.required,c=open?zone.color:'#68717d';
-  box(-10.5,.05,gateZ,.55,3.1,.6,c);
-  box(10.5,.05,gateZ,.55,3.1,.6,c);
-  box(0,2.65,gateZ,21.5,.35,.55,c);
-  for(let x=-8.5;x<=8.5;x+=2.2)box(x,.05,gateZ,.16,2.2,.22,c);
-  label('ZONE '+zone.level+' · '+zone.monster+' · TREADMILL LV '+zone.required,0,3.2,gateZ,'#fff5da');
-  const p=project(0,1.4,gateZ-.2);
-  if(p.depth>.3&&p.x>-80&&p.x<W+80){ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillStyle=open?'#073c31':'#55252a';ctx.fillText(open?'OPEN':'LOCKED',p.x,p.y)}
- }
-}
-function drawGuard(g){
- const lv=g.zone.level,s=.72+lv*.16,base=g.z,col=['#8b969e','#efb5a5','#cc965a','#d18b92','#4b425b'][lv-1],bw=.48+lv*.1;
- box(g.x,.05,base,bw,.68*s,.42*s,col,g.yaw);
- box(g.x,.65*s,base-.02,.46*s,.46*s,.43*s,lv===1?'#929fa9':col,g.yaw);
- box(g.x-.13*s,.84*s,base-.245*s,.055*s,.07*s,.025,'#1f2937',g.yaw);
- box(g.x+.13*s,.84*s,base-.245*s,.055*s,.07*s,.025,'#1f2937',g.yaw);
- if(lv===1||lv===3){const ear=lv===1?'#b2bcc4':'#6d533f';box(g.x-.18*s,1.03*s,base-.01,.16*s,.18*s,.16*s,ear,g.yaw);box(g.x+.18*s,1.03*s,base-.01,.16*s,.18*s,.16*s,ear,g.yaw)}
- if(lv===1)box(g.x+.22*s,.16*s,base+.25*s,.45*s,.09*s,.09*s,col,g.yaw);
- label('LV '+lv+' '+g.zone.monster,g.x,1.45*s,base,'#fff0d3');
-}
-function selectedDecoration(){const placed=player.inventory.filter(f=>f.placed);if(!placed.length)return null;selectedDecorIndex=((selectedDecorIndex%placed.length)+placed.length)%placed.length;return placed[selectedDecorIndex]}
-function refreshDecorUI(){
- $('decorate').textContent=decorateMode?'🛠 Decorate mode: ON':'🛠 Decorate mode: OFF';
- $('decorOptions').style.display=decorateMode?'block':'none';
- const item=selectedDecoration();$('decorStatus').textContent=item?'Selected: '+names[item.i]+' · Slot '+(Number(item.slot||0)+1):'No placed furniture yet; deliver and place an item first.';
- $('decorNext').disabled=!item;$('decorMove').disabled=!item;$('decorRotate').disabled=!item;$('decorStore').disabled=!item;
-}
-function drawWorld(){
- prepareCamera();
- const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#71c7e4');sky.addColorStop(.5,'#c7edf2');sky.addColorStop(.51,'#91c985');sky.addColorStop(1,'#6eae67');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
- ground();drawHouse();plaza();drawTreadmill();drawFountain();drawZoneGates();
- for(const [x,z] of [[-16,-15],[-12,-19],[14,-15],[17,-8],[-17,0],[14,8],[-17,11],[13,18],[-15,-31],[15,-31],[-15,-44],[15,-44]])tree(x,z);
- const all=[];
- furniture.filter(f=>!f.taken).forEach(f=>all.push({depth:project(f.x,.7,f.z).depth,draw:()=>drawFurniture(f)}));
- player.inventory.filter(f=>f.placed).forEach(f=>{const x=-11.7+((f.slot||0)%3)*1.7,z=6.3+Math.floor((f.slot||0)/3)*1.7;all.push({depth:project(x,.7,z).depth,draw:()=>drawPlaced(f)})});
- guards.forEach(g=>all.push({depth:project(g.x,.9,g.z).depth,draw:()=>drawGuard(g)}));
- all.push({depth:project(player.x,1,player.z).depth,draw:drawPlayer});
- all.sort((a,b)=>b.depth-a.depth).forEach(o=>o.draw());
-}
-function nearestFurniture(){let candidates=furniture.filter(f=>!f.taken).sort((a,b)=>d2(player,a)-d2(player,b));return candidates[0]&&d2(player,candidates[0])<2.4?candidates[0]:null}
-function refreshUI(){
- $('coins').textContent=Math.floor(player.coins);$('speed').textContent=player.speed.toFixed(1);$('level').textContent='Lv.'+player.level;
- $('carry').textContent=player.carry?names[player.carry.i]+(player.carryExtra?' +1':''):'None';
- const next=player.level<10?prices[player.level]:'MAX';
- const activeZone=zones.slice().reverse().find(z=>player.z<=z.z+4);
- $('zone').textContent=activeZone?('Zone '+activeZone.level):'Plaza';
- $('shoptext').innerHTML='Treadmill level '+player.level+'/10<br>Run speed ×'+gain[player.level-1]+'<br>Training rate ×'+gain[player.level-1]+'<br>Next upgrade: '+(next==='MAX'?'MAX LEVEL':next+' coins')+'<br>Unlocked zones: '+zones.filter(z=>player.level>=z.required).length+'/5';
- $('upgrade').textContent=player.level>=10?'Treadmill MAX':'Upgrade · '+prices[player.level]+' coins';
- $('upgrade').disabled=player.level>=10||player.coins<prices[player.level];$('shoes').disabled=player.shoes>0||player.coins<180;$('bag').disabled=player.bag>1||player.coins<250;
- refreshDecorUI();
-}
-function interact(){
- if(decorateMode&&homeArea()&&!player.carry){
-  const item=player.inventory.find(f=>!f.placed);
-  if(item){const occupied=new Set(player.inventory.filter(f=>f.placed).map(f=>f.slot));let slot=Array.from({length:9},(_,i)=>i).find(i=>!occupied.has(i));if(slot===undefined)return toast('All 9 furniture slots are full. Store one first.');item.slot=slot;item.placed=true;saveGame();toast('Placed '+names[item.i]+' in your home.');return}
- }
- if(player.carry&&homeArea()){
-  const delivered=player.carry;
-  const payout=Math.round(values[delivered.i]*(1+Math.max(0,delivered.zone||0)*.35));
-  player.coins+=payout;player.inventory.push({i:delivered.i,slot:player.inventory.filter(f=>f.placed).length%9,placed:false,rot:0});
-  player.carry=player.carryExtra||null;player.carryExtra=null;
-  const pool=(zones.find(z=>z.level===delivered.zone)||{items:[0,1,2,3,4,5,6,7,8,9]}).items;
-  const idx=pool[spawnIndex++%pool.length];furniture.push(makeF(idx,delivered.spawnX??delivered.x,delivered.spawnZ??delivered.z,delivered.zone||0));
-  saveGame();toast('Delivered '+names[delivered.i]+' · +'+payout+' coins');return;
- }
- if(!player.carry&&homeArea()){
-  const item=player.inventory.find(f=>!f.placed);
-  if(item){item.slot=player.inventory.filter(f=>f.placed).length%9;item.placed=true;saveGame();toast('Decorated your home with '+names[item.i]+'!');return}
- }
- const f=nearestFurniture();
- if(f&&(!player.carry||(player.bag>1&&!player.carryExtra))){
-  f.taken=true;f.x=f.x;f.z=f.z; if(!player.carry)player.carry=f;else player.carryExtra=f;
-  toast('Picked up '+names[f.i]+'! Take it home.');return;
- }
- if(treadmillArea()){player.train=true;toast('Hold INTERACT while on the treadmill to train.');return}
- toast(player.carry?'Take the furniture inside your home.':'Walk close to a furniture item to pick it up.');
-}
-function returnHomeAfterCaught(guard){
- const items=[player.carry,player.carryExtra].filter(Boolean);
- for(const item of items){item.taken=false;item.x=item.spawnX??item.x;item.z=item.spawnZ??item.z}
- player.carry=null;player.carryExtra=null;player.x=-10;player.z=11;player.yaw=0;
- toast('Caught by '+guard.zone.monster+'! Furniture dropped. Back home.');saveGame();
-}
-function updateGuards(dt,now){
- for(const g of guards){
-  g.patrol+=dt;
-  const inRegion=player.z<=g.zone.z+3&&player.z>=g.zone.z-5;
-  if(inRegion){
-   const dx=player.x-g.x,dz=player.z-g.z,d=Math.hypot(dx,dz)||1;
-   if(d<10){g.x+=dx/d*g.zone.speed*dt;g.z+=dz/d*g.zone.speed*dt;g.yaw=Math.atan2(dx,dz)}
-   if((player.carry||player.carryExtra)&&d<1.15&&now>gateToastClock){gateToastClock=now+1800;returnHomeAfterCaught(g)}
-  }else{
-   const targetX=Math.sin(g.patrol*.55+g.zone.level)*2.4;
-   g.x+=(targetX-g.x)*Math.min(1,dt*.6);
-   g.z+=(g.zone.z-g.z)*Math.min(1,dt*.5);
-  }
- }
-}
-$('decorate').onclick=()=>{decorateMode=!decorateMode;saveGame();refreshDecorUI();toast(decorateMode?'Decorate mode on: select a placed item below.':'Decorate mode off.')};
-$('decorNext').onclick=()=>{const placed=player.inventory.filter(f=>f.placed);if(!placed.length)return toast('No placed furniture to select.');selectedDecorIndex=(selectedDecorIndex+1)%placed.length;refreshDecorUI();toast('Selected '+names[selectedDecoration().i])};
-$('decorMove').onclick=()=>{const item=selectedDecoration();if(!item)return toast('Place furniture first.');const placed=player.inventory.filter(f=>f.placed&&f!==item),occupied=new Set(placed.map(f=>f.slot));let target;for(let step=1;step<=9;step++){const v=((Number(item.slot)||0)+step)%9;if(!occupied.has(v)){target=v;break}}if(target===undefined)return toast('No free decoration slot.');item.slot=target;saveGame();refreshDecorUI();toast('Furniture moved.')};
-$('decorRotate').onclick=()=>{const item=selectedDecoration();if(!item)return toast('Place furniture first.');item.rot=((Number(item.rot)||0)+Math.PI/2)%(Math.PI*2);saveGame();toast('Furniture rotated.')};
-$('decorStore').onclick=()=>{const item=selectedDecoration();if(!item)return toast('Place furniture first.');item.placed=false;selectedDecorIndex=0;saveGame();refreshDecorUI();toast('Furniture stored.')};
-$('upgrade').onclick=()=>{if(player.level>=10)return;const cost=prices[player.level];if(player.coins<cost)return toast('Not enough coins yet.');player.coins-=cost;player.level++;player.speed=Math.max(player.speed,1+(player.level-1)*.35+player.shoes*.5);saveGame();refreshUI();toast('Treadmill upgraded to level '+player.level+'!')};
-$('shoes').onclick=()=>{if(player.shoes||player.coins<180)return;player.coins-=180;player.shoes=1;player.speed+=.5;saveGame();refreshUI();toast('Speed shoes equipped!')};
-$('bag').onclick=()=>{if(player.bag>1||player.coins<250)return;player.coins-=250;player.bag=2;saveGame();refreshUI();toast('Your bag now carries two items!')};
-const stick=$('stick'),nub=$('nub');let stickPointer=null;
-function setStick(e){const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.33,L=Math.hypot(dx,dy);if(L>max){dx=dx/L*max;dy=dy/L*max}stickX=dx/max;stickY=dy/max;nub.style.transform='translate('+dx+'px,'+dy+'px)'}
-stick.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);setStick(e)});
-stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer){e.preventDefault();setStick(e)}});
-function releaseStick(e){if(stickPointer===e.pointerId){stickPointer=null;stickX=0;stickY=0;nub.style.transform='translate(0,0)'}}
-stick.addEventListener('pointerup',releaseStick);stick.addEventListener('pointercancel',releaseStick);stick.addEventListener('lostpointercapture',()=>{stickPointer=null;stickX=stickY=0;nub.style.transform='translate(0,0)'});
-let actPointer=null;
-$('act').addEventListener('pointerdown',e=>{e.preventDefault();actPointer=e.pointerId;$('act').setPointerCapture(e.pointerId);if(treadmillArea()){keys.e=true;player.train=true}else interact()});
-$('act').addEventListener('pointerup',e=>{if(actPointer===e.pointerId){actPointer=null;keys.e=false;player.train=false}});
-$('act').addEventListener('pointercancel',()=>{actPointer=null;keys.e=false;player.train=false});
-function keyName(k){return k.toLowerCase()}
-addEventListener('keydown',e=>{const k=keyName(e.key);if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e'&&!keys.e){if(!treadmillArea())interact();else player.train=true}keys[k]=true});
-addEventListener('keyup',e=>{keys[keyName(e.key)]=false;if(keyName(e.key)==='e')player.train=false});
-let mouseDown=false,lastPointerX=0,lastPointerY=0;
-canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.clientX<W*.66){return}mouseDown=true;lastPointerX=e.clientX;lastPointerY=e.clientY;if(canvas.setPointerCapture)try{canvas.setPointerCapture(e.pointerId)}catch(_){}});
-canvas.addEventListener('pointermove',e=>{if(mouseDown){const dx=e.clientX-lastPointerX,dy=e.clientY-lastPointerY;camYaw+=dx*.006;lastPointerX=e.clientX;lastPointerY=e.clientY}});
-function stopCam(){mouseDown=false}canvas.addEventListener('pointerup',stopCam);canvas.addEventListener('pointercancel',stopCam);
-let last=performance.now();
-function update(dt,now){
- let mx=stickX,my=stickY;
- if(keys.a||keys.arrowleft)mx-=1;if(keys.d||keys.arrowright)mx+=1;
- if(keys.w||keys.arrowup)my-=1;if(keys.s||keys.arrowdown)my+=1;
- const mag=Math.hypot(mx,my);if(mag>1){mx/=mag;my/=mag}
- const fx=Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=Math.sin(camYaw);
- const vx=rx*mx+fx*(-my),vz=rz*mx+fz*(-my);
- const previousZ=player.z;
- if(Math.hypot(vx,vz)>.08){
-  const carryPenalty=player.carry?(player.carryExtra?.52:.68):1;
-  const speedFactor=(keys.shift?1.38:1)*player.speed*carryPenalty;
-  player.x+=vx*speedFactor*3.0*dt;player.z+=vz*speedFactor*3.0*dt;
-  player.yaw=Math.atan2(vx,-vz);walking+=dt*speedFactor*3.5;
- }
- player.x=Math.max(-12,Math.min(12,player.x));
- for(const z of zones){const gateZ=z.z+4;if(previousZ>gateZ&&player.z<=gateZ&&player.level<z.required){player.z=gateZ+.45;if(now>gateToastClock){gateToastClock=now+1600;toast('Locked gate! Upgrade treadmill to level '+z.required+'.')}}}
- player.z=Math.max(-54,Math.min(23,player.z));
- if(treadmillArea()&&keys.e){player.speed=Math.min(8,player.speed+dt*.16*gain[player.level-1]);player.train=true}
- else if(!keys.e)player.train=false;
- saveClock+=dt;if(saveClock>3){saveClock=0;saveGame()}
- incomeClock+=dt;if(incomeClock>=1){incomeClock-=1;const count=player.inventory.filter(f=>f.placed).length;if(count)player.coins+=count*2}
- updateGuards(dt,now);
- if(now<toastTimer){}else $('toast').classList.remove('show');
- refreshUI();
-}
-window.__dragCamera=dx=>{camYaw+=dx*.006};
-function loop(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;update(dt,now);window.furniGameState={player,camYaw,furniture,guards,inventory:player.inventory};if(window.renderFurniThree)window.renderFurniThree();requestAnimationFrame(loop)}
-refreshUI();requestAnimationFrame(loop);
-})();
-</script>
-
-<!-- Real 3D renderer: gameplay state is shared with the existing controls; scene objects are GLB assets. -->
-<style>#game{display:none}#threeGame{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none;z-index:0}#hud{z-index:2}</style>
-<canvas id="threeGame" aria-label="Furni Heist 3D world"></canvas>
+:root{--panel:#111827eF;--gold:#ffd166;--mint:#5ce1b6}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bd8e9;color:white;font:600 14px system-ui,Arial}#world{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none}#hud{position:fixed;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);pointer-events:none}.panel{background:var(--panel);border:1px solid #ffffff28;border-radius:13px;padding:8px 10px;box-shadow:0 4px 16px #0002;backdrop-filter:blur(8px)}#top{position:absolute;top:8px;left:8px;display:flex;flex-wrap:wrap;gap:5px;max-width:65vw}#top b{color:var(--gold)}#mission{position:absolute;right:8px;top:8px;width:min(255px,29vw);line-height:1.4}#shop{position:absolute;right:8px;top:122px;width:min(255px,29vw);max-height:calc(100dvh - 220px);overflow:auto;pointer-events:auto}h3{margin:0 0 5px;color:var(--gold)}button{display:block;width:100%;margin-top:5px;padding:9px 8px;border:0;border-radius:9px;background:linear-gradient(135deg,#ffe08a,#ffb938);color:#382300;font-weight:800;font-size:12px;touch-action:manipulation}button:disabled{opacity:.4}.small{font-size:11px;color:#d3dbe6;font-weight:500}#toast{position:absolute;top:82px;left:50%;transform:translateX(-50%);background:#111827eF;padding:9px 14px;border-radius:12px;opacity:0;transition:opacity .18s;max-width:80vw;text-align:center}#toast.show{opacity:1}#stick{position:absolute;left:17px;bottom:22px;width:126px;height:126px;border-radius:50%;background:#10182788;border:2px solid #ffffff69;pointer-events:auto;touch-action:none}#nub{position:absolute;width:53px;height:53px;left:34px;top:34px;border-radius:50%;background:#eaf6ffdc;border:3px solid #ffffffb8;box-shadow:0 4px 14px #0005}#act{position:absolute;right:18px;bottom:20px;width:88px;height:70px;border-radius:45%;background:var(--mint);color:#073c31;font-size:12px;pointer-events:auto}#status{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-size:11px;text-align:center;white-space:nowrap;text-shadow:0 2px 4px #000}#decorOptions{display:none}@media(max-width:600px){#top{max-width:55vw}#top .panel{padding:6px 8px;font-size:11px}#mission{top:95px;width:42vw;font-size:11px;padding:7px}#shop{top:auto;bottom:100px;width:42vw;max-height:39dvh;padding:7px}#shop button{padding:7px 5px;font-size:10px}#stick{width:112px;height:112px;left:12px;bottom:17px}#nub{width:48px;height:48px;left:30px;top:30px}#act{right:14px;bottom:15px;width:74px;height:62px}#status{display:none}}
+</style></head><body><canvas id="world" aria-label="Furni Heist 3D"></canvas>
+<div id="hud"><div id="top"><div class="panel">🪙 <b id="coins">250</b></div><div class="panel">⚡ <b id="speed">1.0</b></div><div class="panel">🏃 <b id="level">Lv.1</b></div><div class="panel">🪑 <b id="carry">Trống</b></div><div class="panel">🗺 <b id="zone">Khu 0</b></div></div>
+<div id="mission" class="panel"><b>FURNI HEIST 3D</b><br>Nhặt nội thất ở các khu, tránh quái và đem đồ về nhà để bán hoặc trang trí.<div class="small">Đồ đã đặt trong nhà tự kiếm xu theo thời gian.</div></div>
+<div id="shop" class="panel"><h3>🏃 Máy chạy bộ</h3><div id="shoptext" class="small"></div><button id="upgrade">Nâng cấp · 120 xu</button><button id="shoes">Giày tốc độ · 180</button><button id="bag">Túi 2 món · 250</button><button id="decorate">Trang trí: TẮT</button><div id="decorOptions"><button id="decorNext">Chọn món tiếp</button><button id="decorMove">Di chuyển món</button><button id="decorRotate">Xoay món</button><button id="decorStore">Cất món</button></div><div class="small">Giữ INTERACT khi đứng trên máy chạy bộ để luyện tốc độ. Khu sau cần cấp máy cao hơn.</div></div>
+<div id="stick"><div id="nub"></div></div><button id="act">INTERACT</button><div id="status">WASD / phím mũi tên để đi · kéo nền để xoay camera · E để tương tác</div><div id="toast"></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
-const canvas=document.getElementById('threeGame');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
-renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.setClearColor(0x9bd8e9);
-const scene=new THREE.Scene(); scene.background=new THREE.Color(0x9bd8e9);scene.fog=new THREE.Fog(0x9bd8e9,45,100);
-scene.add(new THREE.HemisphereLight(0xe4f6ff,0x65834d,2.0));
-const sun=new THREE.DirectionalLight(0xfff0d5,3);sun.position.set(-12,25,10);sun.castShadow=true;scene.add(sun);
-const camera=new THREE.PerspectiveCamera(62,1,.1,180);
-const loader=new GLTFLoader(), models={};let mapRoot=null;
-const urls={
- map:'models3d/map/map_full.glb',player:'models3d/other/player.glb',treadmill:'models3d/other/treadmill.glb',
- chair:'models3d/furniture/chair.glb',shelf:'models3d/furniture/shelf.glb',sofa:'models3d/furniture/sofa.glb',
- fridge:'models3d/furniture/fridge.glb',lamp:'models3d/furniture/lamp.glb',plant:'models3d/furniture/plant.glb',
- tv:'models3d/furniture/tv.glb',bed:'models3d/furniture/bed.glb',table:'models3d/furniture/table.glb',
- cat:'models3d/monsters/cat.glb',mouse:'models3d/monsters/mouse.glb',dad:'models3d/monsters/dad.glb',
- baby:'models3d/monsters/baby.glb',mom:'models3d/monsters/mom.glb'
-};
-const furnitureKeys=['chair','lamp','table','sofa','tv','fridge','bed','shelf','plant','chair'];
-const monsterKeys=['mouse','baby','cat','mom','dad'];
-const modelObjects={furniture:[],guards:[],placed:[],player:null,treadmill:null};
-function loadModel(key,url){return new Promise(resolve=>loader.load(url,g=>{const root=g.scene;root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});models[key]=root;resolve(root)},undefined,()=>resolve(null)))}
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(100,130),new THREE.MeshStandardMaterial({color:0x7fbd74,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-.08,-17);floor.receiveShadow=true;scene.add(floor);
-const mapPromise=loadModel('map',urls.map).then(root=>{if(root){mapRoot=root;root.scale.setScalar(.55);root.position.set(0,.264,0);scene.add(root)}});
-const tasks=Object.entries(urls).filter(([k])=>k!=='map').map(([k,u])=>loadModel(k,u));
-const modelObjects={furniture:new Map(),guards:new Map(),placed:new Map(),player:null,treadmill:null};
-function cloneModel(key,x,z,scale=1){
- if(!models[key])return null;
- const o=models[key].clone(true);o.scale.setScalar(scale);
- const b=new THREE.Box3().setFromObject(o);o.position.set(x,-b.min.y*scale,z);
- scene.add(o);return o;
-}
-function reconcile(cache,items,visible,create,place){
- const active=items.filter(visible),set=new Set(active);
- for(const [item,obj] of cache){if(!set.has(item)){scene.remove(obj);cache.delete(item)}}
- for(const item of active){
-  let obj=cache.get(item);
-  if(!obj){obj=create(item);if(obj)cache.set(item,obj)}
-  if(obj)place(obj,item);
- }
-}
-function syncObjects(){
- const s=window.furniGameState;if(!s)return;const p=s.player;
- if(!modelObjects.player&&models.player)modelObjects.player=cloneModel('player',p.x,p.z,.9);
- if(modelObjects.player){modelObjects.player.position.x=p.x;modelObjects.player.position.z=p.z;modelObjects.player.rotation.y=p.yaw}
- if(!modelObjects.treadmill&&models.treadmill)modelObjects.treadmill=cloneModel('treadmill',6,3.5,.5);
- reconcile(modelObjects.furniture,s.furniture,f=>!f.taken,f=>cloneModel(furnitureKeys[f.i]||'chair',f.x,f.z,.65),(o,f)=>{o.position.x=f.x;o.position.z=f.z;o.rotation.y=Number(f.rot)||0});
- reconcile(modelObjects.guards,s.guards,()=>true,g=>cloneModel(monsterKeys[s.guards.indexOf(g)]||'mouse',g.x,g.z,.65),(o,g)=>{o.position.x=g.x;o.position.z=g.z;o.rotation.y=g.yaw});
- reconcile(modelObjects.placed,s.inventory||[],f=>!!f.placed,f=>{const n=Number(f.slot)||0;return cloneModel(furnitureKeys[f.i]||'chair',-11.7+n%3*1.7,6.3+Math.floor(n/3)*1.7,.55)},(o,f)=>{const n=Number(f.slot)||0;o.position.x=-11.7+n%3*1.7;o.position.z=6.3+Math.floor(n/3)*1.7;o.rotation.y=Number(f.rot)||0});
-}
-function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
-addEventListener('resize',resize);resize();
-const inputCanvas=document.getElementById('threeGame');let cameraDrag=false,lastCameraX=0;
-inputCanvas.addEventListener('pointerdown',e=>{cameraDrag=true;lastCameraX=e.clientX;try{inputCanvas.setPointerCapture(e.pointerId)}catch(_){}});
-inputCanvas.addEventListener('pointermove',e=>{if(cameraDrag){window.__dragCamera?.(e.clientX-lastCameraX);lastCameraX=e.clientX}});
-const stopCameraDrag=()=>{cameraDrag=false};inputCanvas.addEventListener('pointerup',stopCameraDrag);inputCanvas.addEventListener('pointercancel',stopCameraDrag);
-window.renderFurniThree=function(){
- const s=window.furniGameState;if(!s)return;
- const p=s.player,angle=s.camYaw||0;
- const target=new THREE.Vector3(p.x,1.1,p.z);
- camera.position.set(p.x+Math.sin(angle)*7,5.2,p.z+Math.cos(angle)*7);
- camera.lookAt(target);
- syncObjects();renderer.render(scene,camera);
-};
-Promise.all([mapPromise,...tasks]).then(()=>{window.furniThreeReady=true});
-</script>
-
-</body>
-</html>
+import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id),canvas=$('world');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bd8e9);scene.fog=new THREE.Fog(0x9bd8e9,70,145);scene.add(new THREE.HemisphereLight(0xe8f6ff,0x557346,2.0));const sun=new THREE.DirectionalLight(0xfff0d5,2.6);sun.position.set(-15,35,10);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const camera=new THREE.PerspectiveCamera(62,1,.1,250),loader=new GLTFLoader(),models={};
+const paths={map:'models3d/map/map_full.glb',player:'models3d/other/player.glb',treadmill:'models3d/other/treadmill.glb',chair:'models3d/furniture/chair.glb',shelf:'models3d/furniture/shelf.glb',sofa:'models3d/furniture/sofa.glb',fridge:'models3d/furniture/fridge.glb',lamp:'models3d/furniture/lamp.glb',plant:'models3d/furniture/plant.glb',tv:'models3d/furniture/tv.glb',bed:'models3d/furniture/bed.glb',table:'models3d/furniture/table.glb',cat:'models3d/monsters/cat.glb',mouse:'models3d/monsters/mouse.glb',dad:'models3d/monsters/dad.glb',baby:'models3d/monsters/baby.glb',mom:'models3d/monsters/mom.glb'};
+const scale={map:.55,player:.78,treadmill:.48,chair:.48,lamp:.38,table:.42,sofa:.28,tv:.48,fridge:.38,bed:.34,shelf:.4,plant:.44,mouse:.62,baby:.62,cat:.52,mom:.62,dad:.62};
+function loadModel(key,url){return new Promise(resolve=>loader.load(url,g=>{const root=g.scene;root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.material){o.material.side=THREE.DoubleSide}}});models[key]=root;resolve(root)},undefined,()=>{console.error('Model failed:',url);resolve(null)}))}
+const modelReady=Promise.all(Object.entries(paths).map(([k,p])=>loadModel(k,p)));
+function cloneModel(key,x,z,scaleOverride){if(!models[key])return null;const o=models[key].clone(true);o.scale.setScalar(scaleOverride||scale[key]||.5);const b=new THREE.Box3().setFromObject(o);o.position.set(x,-b.min.y,z);scene.add(o);return o}
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(130,140),new THREE.MeshStandardMaterial({color:0x79b86f,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-.25,-15);floor.receiveShadow=true;scene.add(floor);
+function box(x,y,z,w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:.85}));m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+// Buildable home and visible zone gates are real Three.js meshes, not Canvas drawings.
+box(-10,.05,8,8.2,.18,8,0xdfc9a6);box(-10,.23,8,7.4,2.9,7.1,0xe9d9b9);box(-10,3.15,8,8,.35,7.7,0xa95043);box(-10,.24,4.38,1.35,2.55,.16,0x795038);box(-12.05,1.35,4.36,1.18,1.08,.13,0x78cbe9);box(-7.95,1.35,4.36,1.18,1.08,.13,0x78cbe9);box(-10,.3,8,5.9,.035,5.7,0xc69c70);
+box(6,.06,3.5,3.5,.35,2.6,0x303948);box(6,.42,3.5,2.9,.07,2,0x566477);for(let k=0;k<7;k++)box(4.85+k*.38,.465,3.5,.035,.015,1.8,0x1f2937);
+const prices=[0,120,220,400,650,1000,1600,2500,4000,6500],gain=[1,1.25,1.6,2,2.5,3.1,3.8,4.6,5.5,6.6];
+const furnitureNames=['Ghế gỗ','Đèn sàn','Bàn nhỏ','Sofa','TV','Tủ lạnh','Giường đôi','Kệ tủ','Chậu cây','Ghế hoàng gia'],values=[45,60,85,130,180,240,330,480,700,1200],fkeys=['chair','lamp','table','sofa','tv','fridge','bed','shelf','plant','chair'];
+const zones=[{level:1,required:1,name:'Sân Chuột',monster:'mouse',z:-15,items:[0,1],speed:1.15,color:0x6fc7a1},{level:2,required:3,name:'Khu Em Bé',monster:'baby',z:-23,items:[2,3],speed:1.4,color:0x78b7e8},{level:3,required:5,name:'Góc Mèo',monster:'cat',z:-31,items:[4,5],speed:1.65,color:0xe7bd63},{level:4,required:7,name:'Biệt thự Mẹ',monster:'mom',z:-39,items:[6,7],speed:1.9,color:0xd77c92},{level:5,required:9,name:'Pháo đài Bố',monster:'dad',z:-47,items:[8,9],speed:2.15,color:0xb49aff}];
+for(const z of zones){const gz=z.z+4;box(-10.5,.05,gz,.5,3.2,.6,z.color);box(10.5,.05,gz,.5,3.2,.6,z.color);box(0,2.7,gz,21,.35,.55,z.color);for(let x=-8.5;x<=8.5;x+=2.2)box(x,.05,gz,.13,2.2,.22,z.color)}
+const player={x:0,z:3,yaw:0,speed:1,coins:250,level:1,shoes:0,bag:1,carry:null,carryExtra:null,inventory:[]};let camYaw=0,stickX=0,stickY=0,walking=0,decorateMode=false,selectedDecorIndex=0,spawnIndex=0,saveTime=0,incomeTime=0,toastUntil=0;
+try{const s=JSON.parse(localStorage.getItem('furniHeistSaveV2')||'null');if(s){Object.assign(player,{coins:Number(s.coins??250),speed:Number(s.speed??1),level:Math.max(1,Math.min(10,Number(s.level??1))),shoes:Number(s.shoes??0),bag:Math.max(1,Math.min(2,Number(s.bag??1))),inventory:Array.isArray(s.inventory)?s.inventory:[]});spawnIndex=Number(s.spawnIndex||0);decorateMode=!!s.decorateMode}}catch(e){}
+function save(){try{localStorage.setItem('furniHeistSaveV2',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,inventory:player.inventory,spawnIndex,decorateMode}))}catch(e){}}
+function toast(t){$('toast').textContent=t;$('toast').classList.add('show');toastUntil=performance.now()+1900}
+function makeF(i,x,z,zone=0){return {id:Math.random().toString(36).slice(2),i,x,z,sx:x,sz:z,zone,taken:false}}
+const furniture=[];for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1,0));zones.forEach(z=>z.items.forEach((i,j)=>furniture.push(makeF(i,j===0?-4:4,z.z+(j===0?-1.6:1.6),z.level))));
+const guards=zones.map(z=>({zone:z,x:Math.sin(z.level*2)*2,z:z.z,yaw:Math.PI,patrol:0}));
+const rendered={player:null,treadmill:null,furniture:new Map(),guards:new Map(),placed:new Map(),carry:new Map()};
+function reconcile(cache,items,visible,create,place){const active=items.filter(visible),set=new Set(active);for(const [item,obj] of cache)if(!set.has(item)){scene.remove(obj);cache.delete(item)}for(const item of active){let obj=cache.get(item);if(!obj){obj=create(item);if(obj)cache.set(item,obj)}if(obj)place(obj,item)}}
+function syncModels(){if(!models.player)return;if(!rendered.player)rendered.player=cloneModel('player',player.x,player.z);rendered.player.position.x=player.x;rendered.player.position.z=player.z;rendered.player.rotation.y=player.yaw;
+ if(models.treadmill&&!rendered.treadmill)rendered.treadmill=cloneModel('treadmill',6,3.5);
+ reconcile(rendered.furniture,furniture,f=>!f.taken,f=>cloneModel(fkeys[f.i]||'chair',f.x,f.z),(o,f)=>{o.position.x=f.x;o.position.z=f.z;o.rotation.y=Number(f.rot)||0});
+ reconcile(rendered.guards,guards,()=>true,g=>cloneModel(g.zone.monster,g.x,g.z),(o,g)=>{o.position.x=g.x;o.position.z=g.z;o.rotation.y=g.yaw});
+ reconcile(rendered.placed,player.inventory,f=>f.placed,f=>{const n=Number(f.slot)||0;return cloneModel(fkeys[f.i]||'chair',-11.7+n%3*1.7,6.3+Math.floor(n/3)*1.7)},(o,f)=>{const n=Number(f.slot)||0;o.position.x=-11.7+n%3*1.7;o.position.z=6.3+Math.floor(n/3)*1.7;o.rotation.y=Number(f.rot)||0});
+ const carried=[player.carry,player.carryExtra].filter(Boolean);reconcile(rendered.carry,carried,()=>true,f=>cloneModel(fkeys[f.i]||'chair',player.x+.45,1.2, .23),(o,f)=>{const ix=carried.indexOf(f);o.position.set(player.x+(ix?-.45:.45),1.2,player.z-.35);o.rotation.y=player.yaw});}
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+function homeArea(){return player.x>-15.1&&player.x<-5.2&&player.z>3.3&&player.z<13.3}function treadmillArea(){return Math.hypot(player.x-6,player.z-3.5)<2.3}function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
+function nearestFurniture(){const a=furniture.filter(f=>!f.taken).sort((a,b)=>dist(player,a)-dist(player,b));return a[0]&&dist(player,a[0])<2.5?a[0]:null}
+function selectedDecoration(){const p=player.inventory.filter(f=>f.placed);return p.length?p[selectedDecorIndex%p.length]:null}
+function interact(){if(decorateMode&&homeArea()&&!player.carry){const item=player.inventory.find(f=>!f.placed);if(item){const used=new Set(player.inventory.filter(f=>f.placed).map(f=>f.slot));const slot=Array.from({length:9},(_,i)=>i).find(i=>!used.has(i));if(slot===undefined)return toast('Đủ 9 chỗ đặt đồ. Hãy cất một món.');item.slot=slot;item.placed=true;save();return toast('Đã đặt '+furnitureNames[item.i])}}
+ if((player.carry||player.carryExtra)&&homeArea()){const item=player.carry;player.coins+=Math.round(values[item.i]*(1+Math.max(0,item.zone)*.35));player.inventory.push({i:item.i,placed:false,slot:0,rot:0});player.carry=player.carryExtra;player.carryExtra=null;const zone=zones.find(z=>z.level===item.zone),pool=zone?zone.items:Array.from({length:10},(_,i)=>i),idx=pool[spawnIndex++%pool.length];furniture.push(makeF(idx,item.sx,item.sz,item.zone));save();return toast('Bán '+furnitureNames[item.i]+' lấy xu!')}
+ const f=nearestFurniture();if(f&&(!player.carry||(player.bag>1&&!player.carryExtra))){f.taken=true;if(!player.carry)player.carry=f;else player.carryExtra=f;return toast('Đã nhặt '+furnitureNames[f.i]+'. Đem về nhà!')}
+ if(homeArea()){const item=player.inventory.find(f=>!f.placed);if(item){item.slot=player.inventory.filter(f=>f.placed).length%9;item.placed=true;save();return toast('Đã trang trí nhà!')}}
+ if(treadmillArea())return toast('Giữ INTERACT để luyện tốc độ.');toast(player.carry?'Đem nội thất về nhà để bán.':'Đến gần món đồ rồi bấm INTERACT.')}
+function catchPlayer(g){for(const f of [player.carry,player.carryExtra].filter(Boolean)){f.taken=false;f.x=f.sx;f.z=f.sz}player.carry=null;player.carryExtra=null;player.x=-10;player.z=11;toast('Bị quái bắt! Đồ đã rơi, về nhà thôi.');save()}
+const keys={};function update(dt,now){let mx=stickX,my=stickY;if(keys.a||keys.arrowleft)mx-=1;if(keys.d||keys.arrowright)mx+=1;if(keys.w||keys.arrowup)my-=1;if(keys.s||keys.arrowdown)my+=1;const mag=Math.hypot(mx,my);if(mag>1){mx/=mag;my/=mag}const fx=Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=Math.sin(camYaw),vx=rx*mx+fx*(-my),vz=rz*mx+fz*(-my),oldZ=player.z;
+ if(Math.hypot(vx,vz)>.08){const penalty=player.carry?(player.carryExtra?.52:.68):1,m=(keys.shift?1.38:1)*player.speed*penalty;player.x+=vx*m*3*dt;player.z+=vz*m*3*dt;player.yaw=Math.atan2(vx,-vz);walking+=dt*m*3.5}player.x=THREE.MathUtils.clamp(player.x,-12,12);
+ for(const z of zones){const gate=z.z+4;if(oldZ>gate&&player.z<=gate&&player.level<z.required){player.z=gate+.45;toast('Cần máy chạy bộ cấp '+z.required+' để mở khu này.')}}player.z=THREE.MathUtils.clamp(player.z,-54,23);
+ if(treadmillArea()&&keys.e)player.speed=Math.min(8,player.speed+dt*.16*gain[player.level-1]);
+ for(const g of guards){g.patrol+=dt;const inside=player.z<=g.zone.z+3&&player.z>=g.zone.z-5;if(inside){const dx=player.x-g.x,dz=player.z-g.z,d=Math.hypot(dx,dz)||1;if(d<10){g.x+=dx/d*g.zone.speed*dt;g.z+=dz/d*g.zone.speed*dt;g.yaw=Math.atan2(dx,dz)}if((player.carry||player.carryExtra)&&d<1.2)catchPlayer(g)}else{g.x+=(Math.sin(g.patrol*.55+g.zone.level)*2.4-g.x)*Math.min(1,dt*.6);g.z+=(g.zone.z-g.z)*Math.min(1,dt*.5)}}
+ saveTime+=dt;if(saveTime>3){saveTime=0;save()}incomeTime+=dt;if(incomeTime>=1){incomeTime-=1;player.coins+=player.inventory.filter(f=>f.placed).length*2}
+ $('coins').textContent=Math.floor(player.coins);$('speed').textContent=player.speed.toFixed(1);$('level').textContent='Lv.'+player.level;$('carry').textContent=player.carry?furnitureNames[player.carry.i]+(player.carryExtra?' +1':''):'Trống';const z=zones.slice().reverse().find(z=>player.z<=z.z+4);$('zone').textContent=z?'Khu '+z.level:'Plaza';const price=player.level<10?prices[player.level]:'MAX';$('shoptext').innerHTML='Máy chạy bộ cấp '+player.level+'/10<br>Tốc độ ×'+gain[player.level-1]+'<br>Khu mở: '+zones.filter(z=>player.level>=z.required).length+'/5';$('upgrade').textContent=player.level>=10?'Máy chạy bộ MAX':'Nâng cấp · '+price+' xu';$('upgrade').disabled=player.level>=10||player.coins<prices[player.level];$('shoes').disabled=player.shoes>0||player.coins<180;$('bag').disabled=player.bag>1||player.coins<250;$('decorate').textContent='Trang trí: '+(decorateMode?'BẬT':'TẮT');$('decorOptions').style.display=decorateMode?'block':'none';if(now>toastUntil)$('toast').classList.remove('show')}
+function render(now){const dt=Math.min(.04,Math.max(0,(now-(render.prev||now))/1000));render.prev=now;update(dt,now);syncModels();const a=camYaw;camera.position.set(player.x+Math.sin(a)*7,5.2,player.z+Math.cos(a)*7);camera.lookAt(player.x,1.1,player.z);renderer.render(scene,camera);requestAnimationFrame(render)}
+let stickPointer=null;const stick=$('stick'),nub=$('nub');function setStick(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),d=Math.min(1,Math.hypot(x,y)/(r.width*.38)),a=Math.atan2(y,x);stickX=Math.cos(a)*d;stickY=Math.sin(a)*d;nub.style.transform='translate('+stickX*32+'px,'+stickY*32+'px)'}function releaseStick(e){if(stickPointer===e.pointerId)stickPointer=null;stickX=stickY=0;nub.style.transform='translate(0,0)'}stick.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);setStick(e)});stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer)setStick(e)});stick.addEventListener('pointerup',releaseStick);stick.addEventListener('pointercancel',releaseStick);
+let cameraDrag=false,lastX=0;canvas.addEventListener('pointerdown',e=>{cameraDrag=true;lastX=e.clientX;try{canvas.setPointerCapture(e.pointerId)}catch(_){}});canvas.addEventListener('pointermove',e=>{if(cameraDrag){camYaw+=(e.clientX-lastX)*.006;lastX=e.clientX}});canvas.addEventListener('pointerup',()=>cameraDrag=false);canvas.addEventListener('pointercancel',()=>cameraDrag=false);
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e'&&!e.repeat){if(treadmillArea())keys.e=true;else interact()}});addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});let actPointer=null;$('act').addEventListener('pointerdown',e=>{e.preventDefault();actPointer=e.pointerId;$('act').setPointerCapture(e.pointerId);if(treadmillArea())keys.e=true;else interact()});$('act').addEventListener('pointerup',e=>{if(actPointer===e.pointerId){actPointer=null;keys.e=false}});$('act').addEventListener('pointercancel',()=>{keys.e=false;actPointer=null});
+$('upgrade').onclick=()=>{if(player.level>=10)return;const c=prices[player.level];if(player.coins<c)return toast('Chưa đủ xu.');player.coins-=c;player.level++;player.speed=Math.min(8,player.speed+.15);save();toast('Máy chạy bộ lên cấp '+player.level)};$('shoes').onclick=()=>{if(!player.shoes&&player.coins>=180){player.coins-=180;player.shoes=1;player.speed*=1.2;save();toast('Đã mua giày tốc độ')}};$('bag').onclick=()=>{if(player.bag===1&&player.coins>=250){player.coins-=250;player.bag=2;save();toast('Túi mang được 2 món')}};$('decorate').onclick=()=>{decorateMode=!decorateMode;save()};$('decorNext').onclick=()=>{const a=player.inventory.filter(f=>f.placed);if(a.length)selectedDecorIndex=(selectedDecorIndex+1)%a.length};$('decorMove').onclick=()=>{const f=selectedDecoration();if(f)f.slot=((Number(f.slot)||0)+1)%9;save()};$('decorRotate').onclick=()=>{const f=selectedDecoration();if(f)f.rot=((Number(f.rot)||0)+Math.PI/2)%(Math.PI*2);save()};$('decorStore').onclick=()=>{const f=selectedDecoration();if(f)f.placed=false;save()};
+modelReady.then(()=>{if(models.map){models.map.scale.setScalar(scale.map);const b=new THREE.Box3().setFromObject(models.map);models.map.position.y=-b.min.y;scene.add(models.map)}toast('Đã tải mô hình 3D. Bắt đầu đi lấy nội thất!')});requestAnimationFrame(render);
+</script></body></html>
