@@ -105,7 +105,7 @@ function project(x,y,z){
  const focal=Math.min(W,H)*1.12;
  return {x:W*.5+sx*focal/Math.max(.2,depth),y:H*.47-sy*focal/Math.max(.2,depth),depth,scale:focal/Math.max(.2,depth)};
 }
-function rycross(rx,rz,dx,dy,dz){return [rz*dy,rz*dx-rx*dz,-rx*dy]}
+function rycross(rx,rz,dx,dy,dz){return [-rz*dy,rz*dx-rx*dz,rx*dy]}
 function polyWorld(points,color,stroke=null){
  const ps=points.map(p=>project(p[0],p[1],p[2]));
  if(ps.some(p=>p.depth<.25||!Number.isFinite(p.x)||!Number.isFinite(p.y)))return;
