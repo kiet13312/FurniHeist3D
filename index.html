@@ -36,10 +36,10 @@ h3{margin:0 0 6px;color:var(--gold)}
  #hint{display:none}
  #top{max-width:calc(100vw - 16px);gap:5px;right:4px}
  #top .panel{padding:7px 9px;font-size:12px}
- #mission{right:8px;top:74px;width:min(220px,35vw);font-size:12px;padding:8px 10px}
- #shop{right:8px;top:auto;bottom:112px;width:min(220px,35vw);max-height:43dvh;font-size:12px;padding:8px 10px}
+ #mission{right:8px;top:74px;width:min(205px,30vw);font-size:11px;padding:7px 9px;max-height:18vh;overflow:hidden}
+ #shop{right:8px;top:auto;bottom:102px;width:min(205px,30vw);max-height:37dvh;font-size:11px;padding:7px 9px}
  #shop button{padding:8px 6px;font-size:11px}
- #act{right:22px;bottom:20px;width:88px;height:70px}
+ #act{right:18px;bottom:18px;width:76px;height:64px}
  #toast{top:65px}
 }
 @media (max-width:540px){
@@ -97,13 +97,13 @@ for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1)
 const camera={x:0,y:0,z:0,dx:0,dy:0,dz:0,rx:1,rz:0,ux:0,uy:1,uz:0,focal:1};
 function prepareCamera(){
  const s=Math.sin(camYaw),c=Math.cos(camYaw);
- const tx=player.x+s*2.2,tz=player.z-c*2.2,ty=1.35;
- camera.x=player.x-s*7.5;camera.y=5.4;camera.z=player.z+c*7.5;
+ const tx=player.x+s*1.0,tz=player.z-c*1.0,ty=1.25;
+ camera.x=player.x-s*5.2;camera.y=3.65;camera.z=player.z+c*5.2;
  let dx=tx-camera.x,dy=ty-camera.y,dz=tz-camera.z,L=Math.hypot(dx,dy,dz)||1;
  dx/=L;dy/=L;dz/=L;camera.dx=dx;camera.dy=dy;camera.dz=dz;
  camera.rx=c;camera.rz=s;
  const u=rycross(camera.rx,camera.rz,dx,dy,dz);
- camera.ux=u[0];camera.uy=u[1];camera.uz=u[2];camera.focal=Math.min(W,H)*1.12;
+ camera.ux=u[0];camera.uy=u[1];camera.uz=u[2];camera.focal=Math.min(W,H)*1.32;
 }
 function project(x,y,z){
  const ax=x-camera.x,ay=y-camera.y,az=z-camera.z;
