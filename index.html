@@ -435,9 +435,70 @@ function update(dt,now){
  if(now<toastTimer){}else $('toast').classList.remove('show');
  refreshUI();
 }
-function loop(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;update(dt,now);drawWorld();requestAnimationFrame(loop)}
+function loop(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;update(dt,now);window.furniGameState={player,camYaw,furniture,guards};if(window.renderFurniThree)window.renderFurniThree();requestAnimationFrame(loop)}
 refreshUI();requestAnimationFrame(loop);
 })();
 </script>
+
+<!-- Real 3D renderer: gameplay state is shared with the existing controls; scene objects are GLB assets. -->
+<style>#game{display:none}#threeGame{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none;z-index:0}#hud{z-index:2}</style>
+<canvas id="threeGame" aria-label="Furni Heist 3D world"></canvas>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/loaders/GLTFLoader.js';
+const canvas=document.getElementById('threeGame');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setClearColor(0x9bd8e9);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x9bd8e9);scene.fog=new THREE.Fog(0x9bd8e9,45,100);
+scene.add(new THREE.HemisphereLight(0xe4f6ff,0x65834d,2.0));
+const sun=new THREE.DirectionalLight(0xfff0d5,3);sun.position.set(-12,25,10);sun.castShadow=true;scene.add(sun);
+const camera=new THREE.PerspectiveCamera(62,1,.1,180);
+const loader=new GLTFLoader(), models={};let mapRoot=null;
+const urls={
+ map:'models3d/map/map_full.glb',player:'models3d/other/player.glb',treadmill:'models3d/other/treadmill.glb',
+ chair:'models3d/furniture/chair.glb',shelf:'models3d/furniture/shelf.glb',sofa:'models3d/furniture/sofa.glb',
+ fridge:'models3d/furniture/fridge.glb',lamp:'models3d/furniture/lamp.glb',plant:'models3d/furniture/plant.glb',
+ tv:'models3d/furniture/tv.glb',bed:'models3d/furniture/bed.glb',table:'models3d/furniture/table.glb',
+ cat:'models3d/monsters/cat.glb',mouse:'models3d/monsters/mouse.glb',dad:'models3d/monsters/dad.glb',
+ baby:'models3d/monsters/baby.glb',mom:'models3d/monsters/mom.glb'
+};
+const furnitureKeys=['chair','lamp','table','sofa','tv','fridge','bed','shelf','plant','chair'];
+const monsterKeys=['mouse','baby','cat','mom','dad'];
+const modelObjects={furniture:[],guards:[],placed:[],player:null,treadmill:null};
+function loadModel(key,url){return new Promise(resolve=>loader.load(url,g=>{const root=g.scene;root.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});models[key]=root;resolve(root)},undefined,()=>resolve(null)))}
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(100,130),new THREE.MeshStandardMaterial({color:0x7fbd74,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.set(0,-.08,-17);floor.receiveShadow=true;scene.add(floor);
+const mapPromise=loadModel('map',urls.map).then(root=>{if(root){mapRoot=root;root.position.set(0,0,0);scene.add(root)}});
+const tasks=Object.entries(urls).filter(([k])=>k!=='map').map(([k,u])=>loadModel(k,u));
+function cloneModel(key,x,y,z,scale=1){if(!models[key])return null;const o=models[key].clone(true);o.position.set(x,y,z);o.scale.setScalar(scale);scene.add(o);return o}
+function removeAll(arr){for(const o of arr)if(o)scene.remove(o);arr.length=0}
+function syncObjects(){
+ if(!window.furniGameState)return;
+ const s=window.furniGameState;
+ if(!modelObjects.player&&models.player){modelObjects.player=cloneModel('player',s.player.x,0,s.player.z,.9)}
+ if(modelObjects.player){modelObjects.player.position.set(s.player.x,0,s.player.z);modelObjects.player.rotation.y=s.player.yaw}
+ if(!modelObjects.treadmill&&models.treadmill)modelObjects.treadmill=cloneModel('treadmill',6,0,3.5,1);
+ removeAll(modelObjects.furniture);
+ for(const f of s.furniture.filter(f=>!f.taken)){const key=furnitureKeys[f.i]||'chair';const o=cloneModel(key,f.x,0,f.z,.9);if(o){o.rotation.y=Number(f.rot)||0;modelObjects.furniture.push(o)}}
+ removeAll(modelObjects.guards);
+ s.guards.forEach((g,i)=>{const o=cloneModel(monsterKeys[i]||'mouse',g.x,0,g.z,.9+i*.07);if(o){o.rotation.y=g.yaw;modelObjects.guards.push(o)}});
+ removeAll(modelObjects.placed);
+ s.inventory.filter(f=>f.placed).forEach(f=>{const slot=Number(f.slot)||0,x=-11.7+(slot%3)*1.7,z=6.3+Math.floor(slot/3)*1.7,key=furnitureKeys[f.i]||'chair';const o=cloneModel(key,x,0,z,.8);if(o){o.rotation.y=Number(f.rot)||0;modelObjects.placed.push(o)}});
+}
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+window.renderFurniThree=function(){
+ const s=window.furniGameState;if(!s)return;
+ const p=s.player,angle=s.camYaw||0;
+ const target=new THREE.Vector3(p.x,1.1,p.z);
+ camera.position.set(p.x+Math.sin(angle)*7,5.2,p.z+Math.cos(angle)*7);
+ camera.lookAt(target);
+ syncObjects();renderer.render(scene,camera);
+};
+Promise.all([mapPromise,...tasks]).then(()=>{window.furniThreeReady=true});
+</script>
+
 </body>
 </html>
