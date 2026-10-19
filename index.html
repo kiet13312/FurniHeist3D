@@ -59,9 +59,19 @@ h3{margin:0 0 6px;color:var(--gold)}
   <div class="panel">⚡ Speed <b id="speed">1.0</b></div>
   <div class="panel">🏃 Treadmill <b id="level">Lv.1</b></div>
   <div class="panel">🪑 Carry <b id="carry">None</b></div>
+  <div class="panel">🗺️ <b id="zone">Plaza</b></div>
  </div>
  <div id="mission" class="panel">🎯 <b>Furni Heist</b><br>Grab furniture at the plaza, bring it home, and decorate your house.<div class="small">Get coins and upgrade your speed. Your placed furniture earns income.</div></div>
- <div id="shop" class="panel"><h3>🏃 Treadmill shop</h3><div id="shoptext"></div><button id="upgrade">Upgrade · 120 coins</button><button id="shoes">Buy speed shoes · 180</button><button id="bag">Upgrade carry bag · 250</button><div class="small">Stand by the treadmill and hold INTERACT to train.</div></div>
+ <div id="shop" class="panel"><h3>🏃 Treadmill shop</h3><div id="shoptext"></div><button id="upgrade">Upgrade · 120 coins</button><button id="shoes">Buy speed shoes · 180</button><button id="bag">Upgrade carry bag · 250</button>
+<button id="decorate">🛠 Decorate mode: OFF</button>
+<div id="decorOptions" style="display:none">
+ <div class="small" id="decorStatus">No furniture selected</div>
+ <button id="decorNext">Select next furniture</button>
+ <button id="decorMove">Move to next slot</button>
+ <button id="decorRotate">Rotate selected</button>
+ <button id="decorStore">Store selected</button>
+</div>
+<div class="small">Use the treadmill to train. Higher treadmill levels unlock guarded zones.</div></div>
  <div id="hint" class="panel">Move with WASD / arrows or the joystick · E / INTERACT to pick up, deliver and decorate</div>
  <div id="help">WASD / arrows move · Shift sprint · E interact · Drag the right side to rotate camera</div>
  <div id="stick"><div id="nub"></div><div id="stickLabel">MOVE</div></div>
@@ -83,17 +93,27 @@ const gain=[1,1.25,1.6,2,2.5,3.1,3.8,4.6,5.5,6.6];
 const names=['Wooden Chair','Floor Lamp','Side Table','Sofa','Television','Fridge','Double Bed','Golden Cabinet','Luxury Piano','Royal Throne'];
 const values=[45,60,85,130,180,240,330,480,700,1200];
 const colors=['#b97746','#f3d56c','#9a6c49','#c56d62','#2b3340','#a7c3cc','#536d9c','#c58e42','#8d69bb','#f2bb45'];
+const zones=[
+ {level:1,required:1,name:'Mouse Yard',monster:'MOUSE',z:-15,items:[0,1],color:'#6fc7a1',speed:1.15},
+ {level:2,required:3,name:'Baby Block',monster:'BABY',z:-23,items:[2,3],color:'#78b7e8',speed:1.4},
+ {level:3,required:5,name:'Cat Corner',monster:'CAT',z:-31,items:[4,5],color:'#e7bd63',speed:1.65},
+ {level:4,required:7,name:'Mom Mansion',monster:'MOM',z:-39,items:[6,7],color:'#d77c92',speed:1.9},
+ {level:5,required:9,name:'Dad Fortress',monster:'DAD',z:-47,items:[8,9],color:'#b49aff',speed:2.15}
+];
+let furnitureTransform=null,decorateMode=false,selectedDecorIndex=0,gateToastClock=0;
 const player={x:0,z:3,yaw:0,speed:1,coins:250,level:1,shoes:0,bag:1,carry:null,carryExtra:null,inventory:[],train:false};
 let camYaw=0,stickX=0,stickY=0,walking=0,elapsed=0,saveClock=0,incomeClock=0,toastTimer=0,spawnIndex=0,camDrag=false,dragX=0,dragY=0;
-function saveGame(){try{localStorage.setItem('furniHeistSaveV2',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,inventory:player.inventory,spawnIndex}))}catch(e){}}
-try{let old=JSON.parse(localStorage.getItem('furniHeistSaveV2')||localStorage.getItem('furniHeistSave')||'null');if(old){player.coins=Number(old.coins??250);player.speed=Number(old.speed??1);player.level=Math.max(1,Math.min(10,Number(old.level??1)));player.shoes=Number(old.shoes??0);player.bag=Math.max(1,Math.min(2,Number(old.bag??1)));player.inventory=Array.isArray(old.inventory)?old.inventory:(Array.isArray(old.placed)?old.placed:[]);spawnIndex=Number(old.spawnIndex||0)}}catch(e){}
+function saveGame(){try{localStorage.setItem('furniHeistSaveV2',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,inventory:player.inventory,spawnIndex,decorateMode}))}catch(e){}}
+try{let old=JSON.parse(localStorage.getItem('furniHeistSaveV2')||localStorage.getItem('furniHeistSave')||'null');if(old){player.coins=Number(old.coins??250);player.speed=Number(old.speed??1);player.level=Math.max(1,Math.min(10,Number(old.level??1)));player.shoes=Number(old.shoes??0);player.bag=Math.max(1,Math.min(2,Number(old.bag??1)));player.inventory=Array.isArray(old.inventory)?old.inventory:(Array.isArray(old.placed)?old.placed:[]);spawnIndex=Number(old.spawnIndex||0);decorateMode=!!old.decorateMode}}catch(e){}
 function toast(text){const el=$('toast');el.textContent=text;el.classList.add('show');toastTimer=performance.now()+1800}
 function d2(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
 function homeArea(){return player.x>-15.1&&player.x<-5.2&&player.z>3.3&&player.z<13.3}
 function treadmillArea(){return Math.hypot(player.x-6,player.z-3.5)<2.3}
-function makeF(i,x,z){return {i,x,z,taken:false}}
+function makeF(i,x,z,zone=0){return {i,x,z,spawnX:x,spawnZ:z,zone,taken:false}}
 let furniture=[];
-for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1));
+for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1,0));
+zones.forEach(zone=>zone.items.forEach((item,j)=>furniture.push(makeF(item,j===0?-4:4,zone.z+(j===0?-1.6:1.6),zone.level))));
+const guards=zones.map(zone=>({zone,x:Math.sin(zone.level*2)*2,z:zone.z,yaw:Math.PI,patrol:0}));
 const camera={x:0,y:0,z:0,dx:0,dy:0,dz:0,rx:1,rz:0,ux:0,uy:1,uz:0,focal:1};
 function prepareCamera(){
  const s=Math.sin(camYaw),c=Math.cos(camYaw);
@@ -132,6 +152,7 @@ function polyWorld(points,color,stroke=null){
 }
 function shade(hex,m){let n=parseInt(hex.slice(1),16),r=Math.min(255,((n>>16)&255)*m),g=Math.min(255,((n>>8)&255)*m),b=Math.min(255,(n&255)*m);return 'rgb('+r+','+g+','+b+')'}
 function box(x,y,z,w,h,d,col,yaw=0){
+ if(furnitureTransform){const tr=furnitureTransform,dx=x-tr.x,dz=z-tr.z,c0=Math.cos(tr.rot),s0=Math.sin(tr.rot);x=tr.x+dx*c0+dz*s0;z=tr.z-dx*s0+dz*c0;yaw+=tr.rot}
  const c=Math.cos(yaw),s=Math.sin(yaw);
  const world=(lx,ly,lz)=>[x+lx*c+lz*s,y+ly,z+lx*s-lz*c];
  const v=[
@@ -205,6 +226,7 @@ function plaza(){
 }
 function drawFurniture(f){
  const x=f.x,z=f.z,i=f.i,col=colors[i],y=.18;
+ const previousTransform=furnitureTransform;furnitureTransform={x,z,rot:Number(f.rot)||0};
  if(i===0){box(x,y,z,.8,.5,.8,col);box(x,y+.5,z-.31,.8,.62,.16,col);for(const dx of [-.3,.3])for(const dz of [-.3,.3])box(x+dx,y-.0,z+dz,.09,.48,.09,'#75452c')}
  else if(i===1){box(x,y,z,.18,1.2,.18,'#7d674b');box(x,y+1.2,z,.74,.22,.74,col)}
  else if(i===2){box(x,y,z,.9,.5,.7,col);for(const dx of [-.34,.34])for(const dz of [-.23,.23])box(x+dx,y-.0,z+dz,.08,.45,.08,'#67452f')}
@@ -216,10 +238,12 @@ function drawFurniture(f){
  else if(i===8){box(x,y,z,1.2,.5,.8,col);box(x,y+.5,z,.9,.5,.4,shade(col,.8));box(x,y+1,z,.12,.2,.12,'#272c39')}
  else{box(x,y,z,.9,.65,.75,col);box(x,y+.65,z,.95,.14,.82,shade(col,1.18));box(x,y+.72,z-.3,.65,.55,.15,col);box(x-.43,y,z,.12,.5,.75,shade(col,.75));box(x+.43,y,z,.12,.5,.75,shade(col,.75))}
  label(names[i]+' · '+values[i],x,y+1.42,z,'#fff8de');
+ furnitureTransform=previousTransform;
 }
 function drawPlaced(item){
- const slot=item.slot||0,x=-11.7+(slot%3)*1.7,z=6.3+Math.floor(slot/3)*1.7;
+ const slot=Number(item.slot)||0,x=-11.7+(slot%3)*1.7,z=6.3+Math.floor(slot/3)*1.7;
  const copy={...item,x,z};drawFurniture(copy);
+ if(decorateMode&&selectedDecoration()===item)label('SELECTED',x,2.05,z,'#5ce1b6');
 }
 function drawPlayer(){
  const yaw=player.yaw,walk=Math.sin(walking*10)*.14*(Math.abs(stickX)+Math.abs(stickY)>.12?1:0);
@@ -244,15 +268,53 @@ function drawPlayer(){
  if(player.carry){const item=player.carry;part(.48,1.18,-.25,.34,.32,.28,colors[item.i]);if(player.carryExtra)part(-.48,1.2,-.25,.32,.3,.28,colors[player.carryExtra.i])}
  label('YOU',player.x,2.4,player.z,'#ffffff');
 }
+function drawFountain(){
+ box(8.5,.04,-6,3.2,.28,3.2,'#6b7c91');
+ box(8.5,.32,-6,2.65,.12,2.65,'#9fb6c5');
+ box(8.5,.41,-6,2.1,.08,2.1,'#48b8db');
+ box(8.5,.5,-6,.28,.8,.28,'#d3d9e0');
+ const p=project(8.5,1.2,-6),r=Math.max(4,p.scale*.12);
+ if(p.depth>.3){ctx.fillStyle='#8feaff';ctx.beginPath();ctx.ellipse(p.x,p.y,r*.55,r,0,0,Math.PI*2);ctx.fill()}
+ label('FOUNTAIN',8.5,1.35,-6,'#eafaff');
+}
+function drawZoneGates(){
+ for(const zone of zones){
+  const gateZ=zone.z+4,open=player.level>=zone.required,c=open?zone.color:'#68717d';
+  box(-10.5,.05,gateZ,.55,3.1,.6,c);
+  box(10.5,.05,gateZ,.55,3.1,.6,c);
+  box(0,2.65,gateZ,21.5,.35,.55,c);
+  for(let x=-8.5;x<=8.5;x+=2.2)box(x,.05,gateZ,.16,2.2,.22,c);
+  label('ZONE '+zone.level+' · '+zone.monster+' · TREADMILL LV '+zone.required,0,3.2,gateZ,'#fff5da');
+  const p=project(0,1.4,gateZ-.2);
+  if(p.depth>.3&&p.x>-80&&p.x<W+80){ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillStyle=open?'#073c31':'#55252a';ctx.fillText(open?'OPEN':'LOCKED',p.x,p.y)}
+ }
+}
+function drawGuard(g){
+ const lv=g.zone.level,s=.72+lv*.16,base=g.z,col=['#8b969e','#efb5a5','#cc965a','#d18b92','#4b425b'][lv-1],bw=.48+lv*.1;
+ box(g.x,.05,base,bw,.68*s,.42*s,col,g.yaw);
+ box(g.x,.65*s,base-.02,.46*s,.46*s,.43*s,lv===1?'#929fa9':col,g.yaw);
+ box(g.x-.13*s,.84*s,base-.245*s,.055*s,.07*s,.025,'#1f2937',g.yaw);
+ box(g.x+.13*s,.84*s,base-.245*s,.055*s,.07*s,.025,'#1f2937',g.yaw);
+ if(lv===1||lv===3){const ear=lv===1?'#b2bcc4':'#6d533f';box(g.x-.18*s,1.03*s,base-.01,.16*s,.18*s,.16*s,ear,g.yaw);box(g.x+.18*s,1.03*s,base-.01,.16*s,.18*s,.16*s,ear,g.yaw)}
+ if(lv===1)box(g.x+.22*s,.16*s,base+.25*s,.45*s,.09*s,.09*s,col,g.yaw);
+ label('LV '+lv+' '+g.zone.monster,g.x,1.45*s,base,'#fff0d3');
+}
+function selectedDecoration(){const placed=player.inventory.filter(f=>f.placed);if(!placed.length)return null;selectedDecorIndex=((selectedDecorIndex%placed.length)+placed.length)%placed.length;return placed[selectedDecorIndex]}
+function refreshDecorUI(){
+ $('decorate').textContent=decorateMode?'🛠 Decorate mode: ON':'🛠 Decorate mode: OFF';
+ $('decorOptions').style.display=decorateMode?'block':'none';
+ const item=selectedDecoration();$('decorStatus').textContent=item?'Selected: '+names[item.i]+' · Slot '+(Number(item.slot||0)+1):'No placed furniture yet; deliver and place an item first.';
+ $('decorNext').disabled=!item;$('decorMove').disabled=!item;$('decorRotate').disabled=!item;$('decorStore').disabled=!item;
+}
 function drawWorld(){
  prepareCamera();
  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#71c7e4');sky.addColorStop(.5,'#c7edf2');sky.addColorStop(.51,'#91c985');sky.addColorStop(1,'#6eae67');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
- ground();drawHouse();plaza();drawTreadmill();
- // small props around the neighbourhood help show distance and scale
- for(const [x,z] of [[-16,-15],[-12,-19],[14,-15],[17,-8],[-17,0],[14,8],[-17,11],[13,18]])tree(x,z);
+ ground();drawHouse();plaza();drawTreadmill();drawFountain();drawZoneGates();
+ for(const [x,z] of [[-16,-15],[-12,-19],[14,-15],[17,-8],[-17,0],[14,8],[-17,11],[13,18],[-15,-31],[15,-31],[-15,-44],[15,-44]])tree(x,z);
  const all=[];
  furniture.filter(f=>!f.taken).forEach(f=>all.push({depth:project(f.x,.7,f.z).depth,draw:()=>drawFurniture(f)}));
  player.inventory.filter(f=>f.placed).forEach(f=>{const x=-11.7+((f.slot||0)%3)*1.7,z=6.3+Math.floor((f.slot||0)/3)*1.7;all.push({depth:project(x,.7,z).depth,draw:()=>drawPlaced(f)})});
+ guards.forEach(g=>all.push({depth:project(g.x,.9,g.z).depth,draw:()=>drawGuard(g)}));
  all.push({depth:project(player.x,1,player.z).depth,draw:drawPlayer});
  all.sort((a,b)=>b.depth-a.depth).forEach(o=>o.draw());
 }
@@ -261,16 +323,26 @@ function refreshUI(){
  $('coins').textContent=Math.floor(player.coins);$('speed').textContent=player.speed.toFixed(1);$('level').textContent='Lv.'+player.level;
  $('carry').textContent=player.carry?names[player.carry.i]+(player.carryExtra?' +1':''):'None';
  const next=player.level<10?prices[player.level]:'MAX';
- $('shoptext').innerHTML='Level '+player.level+'/10<br>Speed multiplier: ×'+gain[player.level-1]+'<br>Next level: '+(next==='MAX'?'MAX LEVEL':next+' coins');
+ const activeZone=zones.slice().reverse().find(z=>player.z<=z.z+4);
+ $('zone').textContent=activeZone?('Zone '+activeZone.level):'Plaza';
+ $('shoptext').innerHTML='Treadmill level '+player.level+'/10<br>Run speed ×'+gain[player.level-1]+'<br>Training rate ×'+gain[player.level-1]+'<br>Next upgrade: '+(next==='MAX'?'MAX LEVEL':next+' coins')+'<br>Unlocked zones: '+zones.filter(z=>player.level>=z.required).length+'/5';
  $('upgrade').textContent=player.level>=10?'Treadmill MAX':'Upgrade · '+prices[player.level]+' coins';
  $('upgrade').disabled=player.level>=10||player.coins<prices[player.level];$('shoes').disabled=player.shoes>0||player.coins<180;$('bag').disabled=player.bag>1||player.coins<250;
+ refreshDecorUI();
 }
 function interact(){
+ if(decorateMode&&homeArea()&&!player.carry){
+  const item=player.inventory.find(f=>!f.placed);
+  if(item){const occupied=new Set(player.inventory.filter(f=>f.placed).map(f=>f.slot));let slot=Array.from({length:9},(_,i)=>i).find(i=>!occupied.has(i));if(slot===undefined)return toast('All 9 furniture slots are full. Store one first.');item.slot=slot;item.placed=true;saveGame();toast('Placed '+names[item.i]+' in your home.');return}
+ }
  if(player.carry&&homeArea()){
-  const delivered=player.carry;player.coins+=values[delivered.i];player.inventory.push({i:delivered.i,slot:player.inventory.filter(f=>f.placed).length%9,placed:false});player.carry=player.carryExtra||null;player.carryExtra=null;
-  // Restock the plaza with a new furniture type, so the run keeps progressing.
-  const oldSpot={x:delivered.x,z:delivered.z};const idx=spawnIndex++%10;furniture.push(makeF(idx,oldSpot.x,oldSpot.z));
-  saveGame();toast('Delivered '+names[delivered.i]+' · +'+values[delivered.i]+' coins');return;
+  const delivered=player.carry;
+  const payout=Math.round(values[delivered.i]*(1+Math.max(0,delivered.zone||0)*.35));
+  player.coins+=payout;player.inventory.push({i:delivered.i,slot:player.inventory.filter(f=>f.placed).length%9,placed:false,rot:0});
+  player.carry=player.carryExtra||null;player.carryExtra=null;
+  const pool=(zones.find(z=>z.level===delivered.zone)||{items:[0,1,2,3,4,5,6,7,8,9]}).items;
+  const idx=pool[spawnIndex++%pool.length];furniture.push(makeF(idx,delivered.spawnX??delivered.x,delivered.spawnZ??delivered.z,delivered.zone||0));
+  saveGame();toast('Delivered '+names[delivered.i]+' · +'+payout+' coins');return;
  }
  if(!player.carry&&homeArea()){
   const item=player.inventory.find(f=>!f.placed);
@@ -284,6 +356,32 @@ function interact(){
  if(treadmillArea()){player.train=true;toast('Hold INTERACT while on the treadmill to train.');return}
  toast(player.carry?'Take the furniture inside your home.':'Walk close to a furniture item to pick it up.');
 }
+function returnHomeAfterCaught(guard){
+ const items=[player.carry,player.carryExtra].filter(Boolean);
+ for(const item of items){item.taken=false;item.x=item.spawnX??item.x;item.z=item.spawnZ??item.z}
+ player.carry=null;player.carryExtra=null;player.x=-10;player.z=11;player.yaw=0;
+ toast('Caught by '+guard.zone.monster+'! Furniture dropped. Back home.');saveGame();
+}
+function updateGuards(dt,now){
+ for(const g of guards){
+  g.patrol+=dt;
+  const inRegion=player.z<=g.zone.z+3&&player.z>=g.zone.z-5;
+  if(inRegion){
+   const dx=player.x-g.x,dz=player.z-g.z,d=Math.hypot(dx,dz)||1;
+   if(d<10){g.x+=dx/d*g.zone.speed*dt;g.z+=dz/d*g.zone.speed*dt;g.yaw=Math.atan2(dx,dz)}
+   if((player.carry||player.carryExtra)&&d<1.15&&now>gateToastClock){gateToastClock=now+1800;returnHomeAfterCaught(g)}
+  }else{
+   const targetX=Math.sin(g.patrol*.55+g.zone.level)*2.4;
+   g.x+=(targetX-g.x)*Math.min(1,dt*.6);
+   g.z+=(g.zone.z-g.z)*Math.min(1,dt*.5);
+  }
+ }
+}
+$('decorate').onclick=()=>{decorateMode=!decorateMode;saveGame();refreshDecorUI();toast(decorateMode?'Decorate mode on: select a placed item below.':'Decorate mode off.')};
+$('decorNext').onclick=()=>{const placed=player.inventory.filter(f=>f.placed);if(!placed.length)return toast('No placed furniture to select.');selectedDecorIndex=(selectedDecorIndex+1)%placed.length;refreshDecorUI();toast('Selected '+names[selectedDecoration().i])};
+$('decorMove').onclick=()=>{const item=selectedDecoration();if(!item)return toast('Place furniture first.');const placed=player.inventory.filter(f=>f.placed&&f!==item),occupied=new Set(placed.map(f=>f.slot));let target;for(let step=1;step<=9;step++){const v=((Number(item.slot)||0)+step)%9;if(!occupied.has(v)){target=v;break}}if(target===undefined)return toast('No free decoration slot.');item.slot=target;saveGame();refreshDecorUI();toast('Furniture moved.')};
+$('decorRotate').onclick=()=>{const item=selectedDecoration();if(!item)return toast('Place furniture first.');item.rot=((Number(item.rot)||0)+Math.PI/2)%(Math.PI*2);saveGame();toast('Furniture rotated.')};
+$('decorStore').onclick=()=>{const item=selectedDecoration();if(!item)return toast('Place furniture first.');item.placed=false;selectedDecorIndex=0;saveGame();refreshDecorUI();toast('Furniture stored.')};
 $('upgrade').onclick=()=>{if(player.level>=10)return;const cost=prices[player.level];if(player.coins<cost)return toast('Not enough coins yet.');player.coins-=cost;player.level++;player.speed=Math.max(player.speed,1+(player.level-1)*.35+player.shoes*.5);saveGame();refreshUI();toast('Treadmill upgraded to level '+player.level+'!')};
 $('shoes').onclick=()=>{if(player.shoes||player.coins<180)return;player.coins-=180;player.shoes=1;player.speed+=.5;saveGame();refreshUI();toast('Speed shoes equipped!')};
 $('bag').onclick=()=>{if(player.bag>1||player.coins<250)return;player.coins-=250;player.bag=2;saveGame();refreshUI();toast('Your bag now carries two items!')};
@@ -312,16 +410,21 @@ function update(dt,now){
  const mag=Math.hypot(mx,my);if(mag>1){mx/=mag;my/=mag}
  const fx=Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=Math.sin(camYaw);
  const vx=rx*mx+fx*(-my),vz=rz*mx+fz*(-my);
+ const previousZ=player.z;
  if(Math.hypot(vx,vz)>.08){
-  const speedFactor=(keys.shift?1.38:1)*player.speed;
+  const carryPenalty=player.carry?(player.carryExtra?.52:.68):1;
+  const speedFactor=(keys.shift?1.38:1)*player.speed*carryPenalty;
   player.x+=vx*speedFactor*3.0*dt;player.z+=vz*speedFactor*3.0*dt;
   player.yaw=Math.atan2(vx,-vz);walking+=dt*speedFactor*3.5;
  }
- player.x=Math.max(-23,Math.min(23,player.x));player.z=Math.max(-22,Math.min(23,player.z));
+ player.x=Math.max(-12,Math.min(12,player.x));
+ for(const z of zones){const gateZ=z.z+4;if(previousZ>gateZ&&player.z<=gateZ&&player.level<z.required){player.z=gateZ+.45;if(now>gateToastClock){gateToastClock=now+1600;toast('Locked gate! Upgrade treadmill to level '+z.required+'.')}}}
+ player.z=Math.max(-54,Math.min(23,player.z));
  if(treadmillArea()&&keys.e){player.speed=Math.min(8,player.speed+dt*.16*gain[player.level-1]);player.train=true}
  else if(!keys.e)player.train=false;
  saveClock+=dt;if(saveClock>3){saveClock=0;saveGame()}
  incomeClock+=dt;if(incomeClock>=1){incomeClock-=1;const count=player.inventory.filter(f=>f.placed).length;if(count)player.coins+=count*2}
+ updateGuards(dt,now);
  if(now<toastTimer){}else $('toast').classList.remove('show');
  refreshUI();
 }
