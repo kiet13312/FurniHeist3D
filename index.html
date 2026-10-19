@@ -246,26 +246,33 @@ function drawPlaced(item){
  if(decorateMode&&selectedDecoration()===item)label('SELECTED',x,2.05,z,'#5ce1b6');
 }
 function drawPlayer(){
- const yaw=player.yaw,walk=Math.sin(walking*10)*.14*(Math.abs(stickX)+Math.abs(stickY)>.12?1:0);
- function part(lx,baseY,lz,w,h,d,color){const c=Math.cos(yaw),s=Math.sin(yaw);box(player.x+lx*c+lz*s,baseY,player.z+lx*s-lz*c,w,h,d,color,yaw)}
- // a recognizable blocky R6-style avatar, facing the direction of travel
- const bob=Math.abs(walk)*.32;
- // shadow
+ const yaw=player.yaw,walk=Math.sin(walking*10)*.22*(Math.abs(stickX)+Math.abs(stickY)>.12?1:0);
+ function part(lx,baseY,lz,w,h,d,color,ang= yaw){const c=Math.cos(ang),s=Math.sin(ang);box(player.x+lx*c+lz*s,baseY,player.z+lx*s-lz*c,w,h,d,color,ang)}
+ // Classic blocky Roblox bacon-hair avatar: yellow head/arms, blue torso, green legs.
+ const bob=Math.abs(walk)*.24;
  const p=project(player.x,.02,player.z);
- if(p.depth>0.5){ctx.fillStyle='#182b2b44';ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(10,p.scale*.28),Math.max(4,p.scale*.10),0,0,Math.PI*2);ctx.fill()}
- part(0,.88-bob,0,.66,.88,.38,'#2766d8'); // torso / blue hoodie
- part(0,1.79-bob,0,.5,.5,.48,'#f1be91'); // head
- part(0,2.04-bob,-.015,.52,.13,.51,'#493325'); // hair
- part(0,1.96-bob,-.23,.42,.12,.08,'#493325'); // hair fringe
- // arms swing opposite each other
- part(-.43,.91-bob,-walk,.22,.76,.24,'#f1be91');
- part(.43,.91-bob,walk,.22,.76,.24,'#f1be91');
- part(-.19,.12+Math.max(0,walk)*.3,-walk,.25,.64,.28,'#25364b');
- part(.19,.12+Math.max(0,-walk)*.3,walk,.25,.64,.28,'#25364b');
- // face stays on the front of the head
- part(-.11,1.91-bob,-.252,.055,.06,.018,'#25364b');
- part(.11,1.91-bob,-.252,.055,.06,.018,'#25364b');
- if(player.carry){const item=player.carry;part(.48,1.18,-.25,.34,.32,.28,colors[item.i]);if(player.carryExtra)part(-.48,1.2,-.25,.32,.3,.28,colors[player.carryExtra.i])}
+ if(p.depth>0.5){ctx.fillStyle='#182b2b55';ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(10,p.scale*.30),Math.max(4,p.scale*.11),0,0,Math.PI*2);ctx.fill()}
+ // Green legs with a clear alternating walk cycle.
+ part(-.19,.35+Math.max(0,walk)*.38,-walk*.25,.25,.70,.29,'#16a34a');
+ part(.19,.35+Math.max(0,-walk)*.38,walk*.25,.25,.70,.29,'#16a34a');
+ // Classic blue shirt and yellow arms.
+ part(0,1.02-bob,0,.68,.72,.39,'#1685e5');
+ part(-.43,.96-bob,-walk,.22,.70,.23,'#ffd34d');
+ part(.43,.96-bob,walk,.22,.70,.23,'#ffd34d');
+ // Yellow square head.
+ part(0,1.77-bob,0,.52,.52,.49,'#ffd34d');
+ // Brown layered bacon hair fringe, side locks and back strands.
+ part(0,2.035-bob,-.015,.57,.15,.54,'#5a301b');
+ part(-.18,1.99-bob,-.255,.20,.20,.10,'#6b381d');
+ part(0,1.96-bob,-.285,.18,.24,.10,'#87451f');
+ part(.16,2.00-bob,-.255,.18,.18,.10,'#4b2919');
+ part(-.21,1.88-bob,-.17,.12,.25,.13,'#6b381d');
+ part(.22,1.89-bob,-.15,.11,.22,.13,'#5a301b');
+ // Simple visible face on the front.
+ part(-.115,1.79-bob,-.252,.065,.075,.025,'#252525');
+ part(.115,1.79-bob,-.252,.065,.075,.025,'#252525');
+ part(0,1.68-bob,-.26,.12,.035,.025,'#a65330');
+ if(player.carry){const item=player.carry;part(.48,1.20,-.25,.34,.32,.28,colors[item.i]);if(player.carryExtra)part(-.48,1.2,-.25,.32,.3,.28,colors[player.carryExtra.i])}
  label('YOU',player.x,2.4,player.z,'#ffffff');
 }
 function drawFountain(){
