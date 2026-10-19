@@ -1,4 +1,4 @@
-name: Build FurniHeist3D
+name: Build FurniHeist3D 3D Web
 
 on:
   push:
@@ -15,34 +15,49 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Restore packed GLB assets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zstd
+          cat models3d-bundle-parts/part*.txt | base64 --decode > /tmp/furni-models.zip.zst
+          zstd --decompress --force /tmp/furni-models.zip.zst -o /tmp/furni-models.zip
+          mkdir -p /tmp/furni-models-extracted models3d
+          unzip -oq /tmp/furni-models.zip -d /tmp/furni-models-extracted
+          cp -a /tmp/furni-models-extracted/models3d/. models3d/
+          test "$(find models3d -type f -name '*.glb' | wc -l)" -eq 17
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Validate HTML and JavaScript
+      - name: Validate Three.js game module and model URLs
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-
           html = Path("index.html").read_text(encoding="utf-8")
           assert re.search(r"<!doctype html>", html, re.I), "Missing HTML doctype"
-          assert re.search(r'<canvas[^>]+id=["\']game["\']', html), "Game canvas missing"
+          assert re.search(r'<canvas[^>]+id=["\']world["\']', html), "WebGL world canvas missing"
           scripts = re.findall(r"<script[^>]*>([\s\S]*?)</script>", html, re.I)
-          assert scripts, "No inline game script found"
-          Path("/tmp/furniheist3d.js").write_text(scripts[-1], encoding="utf-8")
-          print(f"Validated index.html ({len(html)} characters)")
+          assert scripts, "No game module found"
+          module = scripts[-1]
+          for path in re.findall(r"'(models3d/[^']+\.glb)'", module):
+              assert Path(path).is_file(), f"Missing GLB: {path}"
+          assert len(list(Path("models3d").rglob("*.glb"))) == 17, "Expected all 17 GLB models"
+          Path("/tmp/furniheist3d.mjs").write_text(module, encoding="utf-8")
+          print(f"Validated WebGL game ({len(html)} characters) and 17 GLB files")
           PY
-          node --check /tmp/furniheist3d.js
+          node --check /tmp/furniheist3d.mjs
 
       - name: Package browser game
         run: |
           mkdir -p dist
           cp index.html README.md dist/
+          cp -a models3d dist/models3d
           cd dist
-          zip -r ../FurniHeist3D-web.zip .
+          zip -qr ../FurniHeist3D-web.zip .
 
       - name: Upload playable web build
         uses: actions/upload-artifact@v4

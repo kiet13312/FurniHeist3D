@@ -25,7 +25,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zstd
           cat models3d-bundle-parts/part*.txt | base64 --decode > /tmp/furni-models.zip.zst
-          zstd --decompress --force /tmp/furni-models.zip.zst --output=/tmp/furni-models.zip
+          zstd --decompress --force /tmp/furni-models.zip.zst -o /tmp/furni-models.zip
           mkdir -p /tmp/furni-models-extracted models3d app/src/main/assets/models3d
           unzip -oq /tmp/furni-models.zip -d /tmp/furni-models-extracted
           cp -a /tmp/furni-models-extracted/models3d/. models3d/
