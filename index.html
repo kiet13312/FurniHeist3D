@@ -1,87 +1,313 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>FurniHeist3D</title>
 <style>
-:root{--glass:#111827dd;--gold:#ffd166;--mint:#5ce1b6}*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#91d5df;color:white;font:600 14px system-ui,Arial}canvas{display:block;width:100vw;height:100vh;touch-action:none}#hud{position:fixed;inset:0;pointer-events:none}.panel{background:var(--glass);border:1px solid #ffffff2b;border-radius:15px;padding:11px 14px;box-shadow:0 6px 22px #10203033;backdrop-filter:blur(7px)}#top{position:absolute;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap}#top b{color:var(--gold)}#mission{position:absolute;top:12px;right:12px;max-width:240px;line-height:1.5}#shop{position:absolute;right:12px;top:105px;width:230px;pointer-events:auto;max-height:65vh;overflow:auto}button{border:0;border-radius:10px;background:linear-gradient(135deg,#ffe08a,#ffb938);color:#342100;font-weight:800;padding:9px 11px;cursor:pointer;width:100%;margin-top:6px}button:disabled{opacity:.4}#hint{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}#controls{position:absolute;bottom:15px;left:15px;display:none;gap:7px;pointer-events:auto}#controls button{width:54px;height:50px;background:#172033cc;color:white;border:1px solid #ffffff55;margin:0;font-size:19px}#act{position:absolute;bottom:22px;right:18px;width:90px;height:68px;border-radius:50%;pointer-events:auto;background:#5ce1b6;color:#073c31}#toast{position:absolute;top:80px;left:50%;transform:translateX(-50%);background:#111827ed;padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .2s}#toast.show{opacity:1}#help{position:absolute;left:12px;bottom:12px;font-size:11px;opacity:.75}h3{margin:0 0 6px;color:var(--gold)}.small{font-size:11px;color:#d0dae7;font-weight:500}@media(max-width:700px){#controls{display:flex}#help{display:none}#shop{top:auto;bottom:92px;right:10px;width:175px;max-height:43vh;font-size:12px}#mission{max-width:165px;font-size:11px}#top{max-width:58vw;font-size:12px}#hint{bottom:78px;font-size:12px}}
+:root{--glass:#111827eF;--gold:#ffd166;--mint:#5ce1b6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bd8e9;color:#fff;font:600 14px system-ui,Arial;overscroll-behavior:none}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+#hud{position:fixed;inset:0;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.panel{background:var(--glass);border:1px solid #ffffff28;border-radius:15px;padding:9px 12px;box-shadow:0 5px 20px #12203328;backdrop-filter:blur(8px)}
+#top{position:absolute;left:10px;top:10px;display:flex;gap:7px;max-width:70vw;flex-wrap:wrap}
+#top b{color:var(--gold)}
+#mission{position:absolute;right:10px;top:10px;width:270px;line-height:1.45}
+#shop{position:absolute;right:10px;top:132px;width:270px;max-height:calc(100dvh - 225px);overflow:auto;pointer-events:auto}
+button{border:0;border-radius:10px;background:linear-gradient(135deg,#ffe08a,#ffb938);color:#342100;font-weight:800;padding:9px 10px;cursor:pointer;width:100%;margin-top:6px;touch-action:manipulation}
+button:disabled{opacity:.4}
+h3{margin:0 0 6px;color:var(--gold)}
+.small{font-size:11px;color:#d0dae7;font-weight:500}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);text-align:center;max-width:52vw;white-space:normal}
+#toast{position:absolute;top:90px;left:50%;transform:translateX(-50%);background:#111827ed;padding:10px 16px;border-radius:12px;opacity:0;transition:opacity .2s;max-width:75vw;text-align:center}
+#toast.show{opacity:1}
+#help{position:absolute;left:12px;bottom:10px;font-size:11px;opacity:.76}
+#stick{display:none;position:absolute;left:20px;bottom:20px;width:145px;height:145px;border-radius:50%;background:#10182799;border:2px solid #ffffff68;pointer-events:auto;touch-action:none;user-select:none;box-shadow:inset 0 0 0 14px #ffffff0b}
+#stick:before{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:#ffffff50;transform:translate(-50%,-50%)}
+#nub{position:absolute;width:61px;height:61px;left:40px;top:40px;border-radius:50%;background:#eaf6ffda;border:3px solid #ffffffb8;box-shadow:0 4px 14px #0005;transform:translate(0,0)}
+#stickLabel{position:absolute;left:0;right:0;bottom:-20px;text-align:center;font-size:10px;color:white;text-shadow:0 1px 4px #000}
+#act{position:absolute;right:20px;bottom:25px;width:100px;height:78px;border-radius:50%;background:var(--mint);color:#073c31;font-size:13px;pointer-events:auto;box-shadow:0 5px 16px #0003;touch-action:none}
+#act:active{transform:scale(.96)}
+#crosshair{position:absolute;left:50%;top:50%;width:7px;height:7px;transform:translate(-50%,-50%);border-radius:50%;background:#ffffffd9;box-shadow:0 0 0 2px #14202c55;pointer-events:none}
+@media (pointer:coarse),(max-width:1000px){
+ #stick{display:block}
+ #help{display:none}
+ #hint{display:none}
+ #top{max-width:calc(100vw - 16px);gap:5px;right:4px}
+ #top .panel{padding:7px 9px;font-size:12px}
+ #mission{right:8px;top:74px;width:min(220px,35vw);font-size:12px;padding:8px 10px}
+ #shop{right:8px;top:auto;bottom:112px;width:min(220px,35vw);max-height:43dvh;font-size:12px;padding:8px 10px}
+ #shop button{padding:8px 6px;font-size:11px}
+ #act{right:22px;bottom:20px;width:88px;height:70px}
+ #toast{top:65px}
+}
+@media (max-width:540px){
+ #mission{width:42vw;right:6px;top:80px}
+ #shop{width:42vw;right:6px;bottom:96px;max-height:42dvh}
+ #stick{width:124px;height:124px;left:14px;bottom:18px}
+ #nub{width:53px;height:53px;left:33px;top:33px}
+ #act{right:14px;bottom:16px;width:78px;height:64px;font-size:11px}
+}
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="game" aria-label="Furni Heist game"></canvas>
 <div id="hud">
- <div id="top"><div class="panel">🪙 <b id="coins">250</b></div><div class="panel">⚡ Speed <b id="speed">1.0</b></div><div class="panel">🏃 Treadmill <b id="level">Lv.1</b></div><div class="panel">🪑 Carry <b id="carry">None</b></div></div>
- <div id="mission" class="panel">🎯 <b>Furni Heist</b><br>Steal furniture from the plaza, bring it home, and decorate your house.<div class="small">Earn coins to upgrade your treadmill to level 10.</div></div>
- <div id="shop" class="panel"><h3>🏃 Treadmill shop</h3><div id="shoptext"></div><button id="upgrade">Upgrade treadmill</button><button id="shoes">Buy speed shoes · 180</button><button id="bag">Upgrade carry bag · 250</button><div class="small">Stand on the treadmill pad and hold E / TRAIN to gain speed.</div></div>
- <div id="hint" class="panel">WASD move · E interact · Take furniture from the plaza and return to your house</div>
- <div id="help">WASD move · Shift sprint · E pick up / deliver / decorate · Mouse drag to rotate view</div>
- <div id="controls"><button data-move="forward">▲</button><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div>
- <button id="act">PICK UP</button><div id="toast"></div>
+ <div id="top">
+  <div class="panel">🪙 <b id="coins">250</b></div>
+  <div class="panel">⚡ Speed <b id="speed">1.0</b></div>
+  <div class="panel">🏃 Treadmill <b id="level">Lv.1</b></div>
+  <div class="panel">🪑 Carry <b id="carry">None</b></div>
+ </div>
+ <div id="mission" class="panel">🎯 <b>Furni Heist</b><br>Grab furniture at the plaza, bring it home, and decorate your house.<div class="small">Get coins and upgrade your speed. Your placed furniture earns income.</div></div>
+ <div id="shop" class="panel"><h3>🏃 Treadmill shop</h3><div id="shoptext"></div><button id="upgrade">Upgrade · 120 coins</button><button id="shoes">Buy speed shoes · 180</button><button id="bag">Upgrade carry bag · 250</button><div class="small">Stand by the treadmill and hold INTERACT to train.</div></div>
+ <div id="hint" class="panel">Move with WASD / arrows or the joystick · E / INTERACT to pick up, deliver and decorate</div>
+ <div id="help">WASD / arrows move · Shift sprint · E interact · Drag the right side to rotate camera</div>
+ <div id="stick"><div id="nub"></div><div id="stickLabel">MOVE</div></div>
+ <button id="act">INTERACT</button>
+ <div id="crosshair"></div>
+ <div id="toast"></div>
 </div>
 <script>
-(()=>{
-const c=document.getElementById('game'),ctx=c.getContext('2d');let W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
-function resize(){W=innerWidth;H=innerHeight;c.width=W*DPR;c.height=H*DPR;c.style.width=W+'px';c.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',resize);resize();
+(()=> {
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
 const $=id=>document.getElementById(id);
-const keys={},player={x:0,z:7,dir:0,carry:null,carryExtra:null,speed:1,coins:250,level:1,shoes:0,bag:1,placed:[],train:0};
-try{const saved=JSON.parse(localStorage.getItem('furniHeistSave')||'null');if(saved){player.coins=saved.coins??250;player.speed=saved.speed??1;player.level=saved.level??1;player.shoes=saved.shoes??0;player.bag=saved.bag??1;player.placed=Array.isArray(saved.placed)?saved.placed:[]}}catch(e){}
-let saveClock=0, incomeClock=0;function saveGame(){try{localStorage.setItem('furniHeistSave',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,placed:player.placed}))}catch(e){}}
-const prices=[0,120,220,400,650,1000,1600,2500,4000,6500],gain=[1,1.25,1.6,2,2.5,3.1,3.8,4.6,5.5,6.6],names=['Wooden Chair','Floor Lamp','Side Table','Sofa','Television','Fridge','Double Bed','Golden Cabinet','Luxury Piano','Royal Throne'];
-const values=[45,60,85,130,180,240,330,480,700,1200],colors=['#b97746','#f3d56c','#9a6c49','#c56d62','#2b3340','#a7c3cc','#536d9c','#c58e42','#8d69bb','#f2bb45'];
-let furniture=[],npcs=[],mouseDown=false,lastX=0,camAngle=0,camZoom=1,toastTimer;
-function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),1800)}
-function makeFurn(i,x,z){return {i,x,z,taken:false,placed:false,phase:Math.random()*6}}
-for(let i=0;i<10;i++)furniture.push(makeFurn(i,-7+(i%5)*3.5,-3-Math.floor(i/5)*2.2));
-for(let i=0;i<3;i++)npcs.push({x:8+i*2,z:-3-i*2,phase:i*2,carry:null});
-function project(x,y,z){let a=camAngle,dx=x-player.x,dz=z-player.z,rx=dx*Math.cos(a)-dz*Math.sin(a),rz=dx*Math.sin(a)+dz*Math.cos(a);let focal=Math.min(W,H)*.9*camZoom,depth=rz+12;depth=Math.max(1.2,depth);return {x:W/2+rx*focal/depth,y:H*.48+(y-1.5)*focal/depth+focal*.5/depth,scale:focal/depth,depth}}
-function poly(points,fill,stroke){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}}
-function box3(x,y,z,w,h,d,col){let pts=[[x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y+h,z-d/2],[x-w/2,y+h,z-d/2],[x-w/2,y,z+d/2],[x+w/2,y,z+d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]].map(p=>project(...p));poly([pts[0],pts[1],pts[2],pts[3]],shade(col,.82));poly([pts[1],pts[5],pts[7],pts[2]],shade(col,.68));poly([pts[3],pts[2],pts[7],pts[6]],shade(col,1.16));poly([pts[4],pts[5],pts[7],pts[6]],shade(col,.75));}
-function shade(hex,m){let n=parseInt(hex.slice(1),16),r=Math.min(255,((n>>16)&255)*m),g=Math.min(255,((n>>8)&255)*m),b=Math.min(255,(n&255)*m);return 'rgb('+r+','+g+','+b+')'}
-function ground(){poly([project(-35,0,-30),project(35,0,-30),project(35,0,40),project(-35,0,40)],'#80bf73');for(let x=-30;x<=30;x+=2){let a=project(x,.005,-25),b=project(x,.005,30);ctx.strokeStyle='#ffffff12';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}for(let z=-25;z<=30;z+=2){let a=project(-30,.005,z),b=project(30,.005,z);ctx.strokeStyle='#ffffff12';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
- box3(0,.02,-2,19,.06,14,'#b5b7b9');box3(0,.1,-2,18,.04,13,'#d6d7d9');
- // road
- box3(0,.04,5,3,.05,28,'#777f8b');
- // home
- box3(-10,.1,9,8,3,7,'#f3dfb9');box3(-10,3.1,9,8,.25,7,'#b85e4d');box3(-10,4.2,9,8,2,7,'#b85e4d');box3(-10,1.4,5.45,1.4,2.6,.15,'#8c593f');box3(-12,1.5,5.4,1.4,1.2,.2,'#72c6e7');
- // treadmill platform and running belt
- box3(5,.18,7,3.2,.28,2.3,'#303948');box3(5,.34,7,2.65,.07,1.75,'#4c596b');box3(5,.65,6.05,.16,.75,.16,'#e2b84d');box3(5.7,1,6.05,1.5,.1,.15,'#e2b84d');
- // central shop kiosk
- box3(0,.1,-7,4,2.3,2.2,'#f0a64c');box3(0,2.5,-7,4.5,.25,2.5,'#d75e4d');label3('FURNITURE PLAZA',0,3.1,-7,'#fff2c9');
+let W=innerWidth,H=innerHeight,DPR=1;
+function resize(){W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);DPR=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+const keys={};
+const prices=[0,120,220,400,650,1000,1600,2500,4000,6500];
+const gain=[1,1.25,1.6,2,2.5,3.1,3.8,4.6,5.5,6.6];
+const names=['Wooden Chair','Floor Lamp','Side Table','Sofa','Television','Fridge','Double Bed','Golden Cabinet','Luxury Piano','Royal Throne'];
+const values=[45,60,85,130,180,240,330,480,700,1200];
+const colors=['#b97746','#f3d56c','#9a6c49','#c56d62','#2b3340','#a7c3cc','#536d9c','#c58e42','#8d69bb','#f2bb45'];
+const player={x:0,z:3,yaw:0,speed:1,coins:250,level:1,shoes:0,bag:1,carry:null,carryExtra:null,inventory:[],train:false};
+let camYaw=0,stickX=0,stickY=0,walking=0,elapsed=0,saveClock=0,incomeClock=0,toastTimer=0,spawnIndex=0,camDrag=false,dragX=0,dragY=0;
+function saveGame(){try{localStorage.setItem('furniHeistSaveV2',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,inventory:player.inventory,spawnIndex}))}catch(e){}}
+try{let old=JSON.parse(localStorage.getItem('furniHeistSaveV2')||'null');if(old){player.coins=Number(old.coins??250);player.speed=Number(old.speed??1);player.level=Math.max(1,Math.min(10,Number(old.level??1)));player.shoes=Number(old.shoes??0);player.bag=Math.max(1,Math.min(2,Number(old.bag??1)));player.inventory=Array.isArray(old.inventory)?old.inventory:[];spawnIndex=Number(old.spawnIndex||0)}}catch(e){}
+function toast(text){const el=$('toast');el.textContent=text;el.classList.add('show');toastTimer=performance.now()+1800}
+function d2(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
+function homeArea(){return player.x>-15.1&&player.x<-5.2&&player.z>3.3&&player.z<13.3}
+function treadmillArea(){return Math.hypot(player.x-6,player.z-3.5)<2.3}
+function makeF(i,x,z){return {i,x,z,taken:false}}
+let furniture=[];
+for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1));
+function project(x,y,z){
+ const fy=1.35,fx=player.x+Math.sin(camYaw)*2.2,fz=player.z-Math.cos(camYaw)*2.2;
+ const cx=player.x-Math.sin(camYaw)*7.5,cy=5.4,cz=player.z+Math.cos(camYaw)*7.5;
+ let dx=fx-cx,dy=fy-cy,dz=fz-cz,L=Math.hypot(dx,dy,dz)||1;dx/=L;dy/=L;dz/=L;
+ const rx=Math.cos(camYaw),rz=Math.sin(camYaw);
+ const ux=rycross(rx,rz,dx,dy,dz);
+ const ax=x-cx,ay=y-cy,az=z-cz;
+ const sx=ax*rx+az*rz,sy=ax*ux[0]+ay*ux[1]+az*ux[2],depth=ax*dx+ay*dy+az*dz;
+ const focal=Math.min(W,H)*1.12;
+ return {x:W*.5+sx*focal/Math.max(.2,depth),y:H*.47-sy*focal/Math.max(.2,depth),depth,scale:focal/Math.max(.2,depth)};
 }
-function label3(text,x,y,z,color='#fff'){let p=project(x,y,z);ctx.font='bold '+Math.max(9,Math.min(19,p.scale*.13))+'px system-ui';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#1b2734';ctx.strokeText(text,p.x,p.y);ctx.fillStyle=color;ctx.fillText(text,p.x,p.y)}
-function furnitureDraw(f){let x=f.x,z=f.z;if(f.placed){let slot=f.slot;x=-12+(slot%3)*2;z=7+Math.floor(slot/3)*2}let y=f.placed?.25:.2;const i=f.i,col=colors[i];if(i===0){box3(x,y,z,.8,.5,.8,col);box3(x,y+.5,z-.32,.8,.65,.16,col);for(let dx of [-.3,.3])for(let dz of [-.3,.3])box3(x+dx,y-.25,z+dz,.09,.5,.09,'#75452c')}
-else if(i===1){box3(x,y,z,.18,1.2,.18,'#7d674b');box3(x,y+1.25,z,.7,.25,.7,col)}
-else if(i===2){box3(x,y,z,.9,.55,.7,col);box3(x,y-.25,z,.12,.5,.12,'#67452f')}
-else if(i===3){box3(x,y,z,.9,.55,.65,col);box3(x,y+.45,z-.23,.9,.5,.18,col);box3(x-.4,y+.2,z,.15,.45,.7,shade(col,.8));box3(x+.4,y+.2,z,.15,.45,.7,shade(col,.8))}
-else if(i===4){box3(x,y,z,.95,.65,.16,'#242a33');box3(x,y+.05,z+.1,.8,.5,.02,'#67cbe6');box3(x,y-.4,z,.12,.3,.12,'#333b46')}
-else if(i===5){box3(x,y,z,.75,1.25,.7,col);box3(x,y+.2,z+.36,.04,.08,.02,'#3e5860');box3(x,y-.35,z+.36,.04,.08,.02,'#3e5860')}
-else if(i===6){box3(x,y,z,1.4,.35,1.9,col);box3(x,y+.2,z-.72,1.35,.25,.35,'#f7e8d2')}
-else if(i===7||i===9){box3(x,y,z,.8,1.2,.6,col);box3(x,y+ .65,z,.85,.15,.65,shade(col,1.2))}
-else{box3(x,y,z,1.2,.5,.8,col);box3(x,y+.5,z,.9,.5,.4,shade(col,.8));box3(x,y+1,z,.12,.2,.12,'#272c39')}
-if(!f.placed)label3(names[i]+' · '+values[i],x,y+1.2,z,'#fff6cf')}
-function character(x,z,col,isPlayer=false){box3(x,.15,z,.62,.85,.42,col);box3(x,1,z,.43,.43,.43,isPlayer?'#ffddb6':'#edc29c');box3(x,.6,z+.25,.16,.55,.16,'#263447');if(isPlayer)label3('YOU',x,1.7,z,'#ffffff')}
-function render(){ctx.clearRect(0,0,W,H);let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#75cce8');sky.addColorStop(.58,'#d6eff0');sky.addColorStop(.59,'#8ecb83');sky.addColorStop(1,'#6aa965');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);ground();let all=[...furniture.filter(f=>!f.taken&&!f.placed).map(f=>({z:f.z,draw:()=>furnitureDraw(f)})),...player.placed.filter(f=>f.placed).map(f=>({z:7+Math.floor(f.slot/3)*2,draw:()=>furnitureDraw({i:f.i,x:0,z:0,placed:true,slot:f.slot})})),...npcs.map(n=>({z:n.z,draw:()=>character(n.x,n.z,'#c84f66')})),{z:player.z,draw:()=>character(player.x,player.z,'#416fe5',true)}];if(player.carry)all.push({z:player.z,draw:()=>{let p=project(player.x,1.5,player.z);ctx.fillStyle=colors[player.carry.i];ctx.fillRect(p.x-12,p.y-12,24,20);if(player.carryExtra){ctx.fillStyle=colors[player.carryExtra.i];ctx.fillRect(p.x+10,p.y-20,20,18)}}});all.sort((a,b)=>b.z-a.z).forEach(o=>o.draw());label3('YOUR HOME',-10,4.6,4.7,'#fff5d6');label3('TREADMILL · LV '+player.level,5,1.6,7,'#fff1b2');label3('TAKE FURNITURE',0,3.1,-8.4,'#fff');updateUI();requestAnimationFrame(render)}
-function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
-function nearHome(){return player.x < -5.5 && player.z>4&&player.z<14}
-function nearTread(){return Math.hypot(player.x-5,player.z-7)<2.1}
-function nearestFurniture(){let candidates=furniture.filter(f=>!f.taken&&!f.placed).sort((a,b)=>dist(player,a)-dist(player,b));return candidates[0]&&dist(player,candidates[0])<2.2?candidates[0]:null}
-function act(){if(player.carry&&nearHome()){let f=player.carry;player.carry=null;f.taken=true;f.placed=false;furniture.push(makeFurn(f.i,-7+(f.i%5)*3.5,-3-Math.floor(f.i/5)*2.2));player.coins+=values[f.i];player.placed.push({i:f.i,slot:player.placed.length%9,placed:false});if(player.carryExtra){player.carry=player.carryExtra;player.carryExtra=null}else player.carry=null;saveGame();toast('Delivered '+names[f.i]+' +'+values[f.i]+' coins!'+(player.carry?' One more item to deliver.':''));return}
- if(player.carry&&nearHome()){return}
- if(!player.carry&&nearHome()){let item=player.placed.find(f=>!f.placed);if(item){item.slot=player.placed.filter(f=>f.placed).length%9;item.placed=true;saveGame();toast('Placed '+names[item.i]+' in your house!');return}}
- let f=nearestFurniture();if(f&&(!player.carry||(player.bag>1&&!player.carryExtra))){f.taken=true;if(!player.carry)player.carry=f;else player.carryExtra=f;toast('Picked up '+names[f.i]+'! Bring it home.');return}
- if(nearTread()){player.train=1;toast('Treadmill active! Hold E / TRAIN to train.');return}
- toast('Get close to furniture, your house, or the treadmill.')}
-function updateUI(){$('coins').textContent=Math.floor(player.coins);$('speed').textContent=player.speed.toFixed(1);$('level').textContent='Lv.'+player.level;$('carry').textContent=player.carry?(names[player.carry.i]+(player.carryExtra?' + 1':'') ):'None';let next=player.level<10?prices[player.level]:'MAX';$('shoptext').innerHTML='Level '+player.level+'/10<br>Speed multiplier: ×'+gain[player.level-1]+'<br>Next level: '+(next==='MAX'?'MAX LEVEL':next+' coins');$('upgrade').textContent=player.level>=10?'Treadmill MAX':'Upgrade · '+prices[player.level]+' coins';$('upgrade').disabled=player.level>=10||player.coins<prices[player.level];$('shoes').disabled=player.shoes>0||player.coins<180;$('bag').disabled=player.bag>1||player.coins<250;$('act').textContent=player.train&&nearTread()?'TRAIN':'PICK UP'}
-$('upgrade').onclick=()=>{if(player.level>=10)return;let p=prices[player.level];if(player.coins<p)return toast('Not enough coins!');player.coins-=p;player.level++;player.speed=1+(player.level-1)*.35+player.shoes*.5;saveGame();toast('Treadmill upgraded to level '+player.level+'!')};
-$('shoes').onclick=()=>{if(player.shoes||player.coins<180)return;player.coins-=180;player.shoes=1;player.speed+=.5;saveGame();toast('Speed shoes equipped!')};
-$('bag').onclick=()=>{if(player.bag>1||player.coins<250)return;player.coins-=250;player.bag=2;saveGame();toast('Carry bag upgraded!')};
-$('act').onclick=()=>{if(nearTread()){player.speed+=.08;player.train=1;toast('Training! Speed +0.08')}else act()};
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();if(e.key.toLowerCase()==='e')act()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-document.querySelectorAll('[data-move]').forEach(b=>{let k={forward:'w',back:'s',left:'a',right:'d'}[b.dataset.move];b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
-c.addEventListener('pointerdown',e=>{mouseDown=true;lastX=e.clientX});addEventListener('pointerup',()=>mouseDown=false);addEventListener('pointermove',e=>{if(mouseDown&&e.pointerType==='mouse'){camAngle+=(e.clientX-lastX)*.004;lastX=e.clientX}});
-let last=performance.now();function tick(now){let dt=Math.min(.04,(now-last)/1000);last=now;let vx=0,vz=0;if(keys.w||keys.arrowup)vz-=1;if(keys.s||keys.arrowdown)vz+=1;if(keys.a||keys.arrowleft)vx-=1;if(keys.d||keys.arrowright)vx+=1;let mag=Math.hypot(vx,vz)||1;let boost=keys.shift?1.4:1;player.x+=vx/mag*player.speed*boost*dt*4;player.z+=vz/mag*player.speed*boost*dt*4;player.x=Math.max(-22,Math.min(22,player.x));player.z=Math.max(-15,Math.min(24,player.z));if(nearTread()&&(keys.e||keys[' '])){player.speed=Math.min(12,player.speed+dt*.22*gain[player.level-1]);player.train=1}else player.train=0;
-incomeClock+=dt;if(incomeClock>=1){incomeClock=0;const placedCount=player.placed.filter(f=>f.placed).length;if(placedCount)player.coins+=placedCount*2;}
-saveClock+=dt;if(saveClock>=2){saveClock=0;saveGame()}requestAnimationFrame(tick)}requestAnimationFrame(tick);render();
+function rycross(rx,rz,dx,dy,dz){return [rz*dy,rz*dx-rx*dz,-rx*dy]}
+function polyWorld(points,color,stroke=null){
+ const ps=points.map(p=>project(p[0],p[1],p[2]));
+ if(ps.some(p=>p.depth<.25||!Number.isFinite(p.x)||!Number.isFinite(p.y)))return;
+ ctx.beginPath();ps.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
+}
+function shade(hex,m){let n=parseInt(hex.slice(1),16),r=Math.min(255,((n>>16)&255)*m),g=Math.min(255,((n>>8)&255)*m),b=Math.min(255,(n&255)*m);return 'rgb('+r+','+g+','+b+')'}
+function box(x,y,z,w,h,d,col,yaw=0){
+ const c=Math.cos(yaw),s=Math.sin(yaw);
+ const world=(lx,ly,lz)=>[x+lx*c+lz*s,y+ly,z+lx*s-lz*c];
+ const v=[
+ world(-w/2,0,-d/2),world(w/2,0,-d/2),world(w/2,h,-d/2),world(-w/2,h,-d/2),
+ world(-w/2,0,d/2),world(w/2,0,d/2),world(w/2,h,d/2),world(-w/2,h,d/2)
+ ];
+ const faces=[
+  {v:[0,1,2,3],c:shade(col,.78)},
+  {v:[1,5,6,2],c:shade(col,.62)},
+  {v:[4,5,6,7],c:shade(col,.72)},
+  {v:[0,4,7,3],c:shade(col,.85)},
+  {v:[3,2,6,7],c:shade(col,1.13)}
+ ];
+ faces.sort((a,b)=>{const dep=f=>f.v.reduce((s,i)=>s+project(...v[i]).depth,0)/f.v.length;return dep(b)-dep(a)}).forEach(f=>polyWorld(f.v.map(i=>v[i]),f.c));
+}
+function label(text,x,y,z,color='#fff4cf'){
+ const p=project(x,y,z);if(p.depth<.7||p.scale<5||p.x<-150||p.x>W+150||p.y<-80||p.y>H+80)return;
+ const size=Math.max(9,Math.min(18,p.scale*.12));ctx.font='bold '+size+'px system-ui';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='#17202bd9';ctx.strokeText(text,p.x,p.y);ctx.fillStyle=color;ctx.fillText(text,p.x,p.y);
+}
+function ground(){
+ const tiles=[];
+ const sx=Math.floor(player.x/4),sz=Math.floor(player.z/4);
+ for(let ix=sx-9;ix<=sx+9;ix++)for(let iz=sz-12;iz<=sz+8;iz++){
+  const x=ix*4,z=iz*4,corners=[[x,0,z],[x+4,0,z],[x+4,0,z+4],[x,0,z+4]],ps=corners.map(p=>project(...p));
+  if(ps.some(p=>p.depth<.3))continue;
+  tiles.push({z:ps.reduce((n,p)=>n+p.depth,0)/4,corners,col:((ix+iz)&1)?'#80bd74':'#78b76e'});
+ }
+ tiles.sort((a,b)=>b.z-a.z);
+ for(const t of tiles)polyWorld(t.corners,t.col);
+ // walkway leading through the furniture plaza
+ box(0,.015,-3,3.6,.06,34,'#8b9298');
+ box(0,.05,-6,23,.1,12,'#c2c6c9');
+ box(0,.105,-6,21.6,.025,10.6,'#d9dadd');
+ for(let z=-18;z<19;z+=4){box(0,.051,z,3.7,.015,.09,'#f3d777')}
+}
+function drawHouse(){
+ box(-10,.1,8,8.2,.18,8.2,'#dfc9a6');
+ box(-10,.25,8,7.4,2.9,7.1,'#e9d9b9');
+ // roof slab and front gable accents
+ box(-10,3.15,8,8,.35,7.7,'#a95043');
+ box(-10,3.48,8,7.5,.13,7.2,'#c96a53');
+ box(-10,.28,4.42,1.35,2.55,.16,'#795038');
+ box(-12.05,1.35,4.39,1.18,1.08,.13,'#78cbe9');
+ box(-7.95,1.35,4.39,1.18,1.08,.13,'#78cbe9');
+ box(-10,2.9,4.37,1.9,.14,.14,'#78523a');
+ label('YOUR HOME',-10,4.1,4.1,'#fff0ca');
+ // interior floor/rug makes the place visibly a home
+ box(-10,.3,8,5.9,.035,5.7,'#c69c70');
+ box(-10,.34,8,3.7,.025,3.8,'#d6b890');
+}
+function tree(x,z){
+ box(x,0,z,.28,1.5,.28,'#795138');
+ const p=project(x,2.0,z),r=Math.max(8,p.scale*.53);
+ if(p.depth>0.5&&p.x>-100&&p.x<W+100&&p.y>-100&&p.y<H+100){
+  ctx.fillStyle='#397f4b';ctx.beginPath();ctx.ellipse(p.x,p.y,r*1.1,r*.8,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#4b9c58';ctx.beginPath();ctx.ellipse(p.x-r*.18,p.y-r*.2,r*.65,r*.47,0,0,Math.PI*2);ctx.fill();
+ }
+}
+function drawTreadmill(){
+ box(6,.06,3.5,3.5,.35,2.6,'#303948');
+ box(6,.42,3.5,2.9,.07,2.0,'#566477');
+ for(let k=0;k<7;k++)box(4.85+k*.38,.465,3.5,.035,.015,1.8,'#1f2937');
+ box(6.1,.52,2.35,.18,.85,.18,'#e2b84d');
+ box(6.85,.91,2.35,1.55,.12,.16,'#e2b84d');
+ label('TREADMILL · LV '+player.level,6,1.65,3.1,'#fff1b2');
+}
+function plaza(){
+ box(0,.16,-6,4.8,2.1,2.1,'#eda852');
+ box(0,2.27,-6,5.1,.22,2.4,'#c75445');
+ label('FURNITURE PLAZA',0,2.9,-7.25,'#fff2c9');
+}
+function drawFurniture(f){
+ const x=f.x,z=f.z,i=f.i,col=colors[i],y=.18;
+ if(i===0){box(x,y,z,.8,.5,.8,col);box(x,y+.5,z-.31,.8,.62,.16,col);for(const dx of [-.3,.3])for(const dz of [-.3,.3])box(x+dx,y-.0,z+dz,.09,.48,.09,'#75452c')}
+ else if(i===1){box(x,y,z,.18,1.2,.18,'#7d674b');box(x,y+1.2,z,.74,.22,.74,col)}
+ else if(i===2){box(x,y,z,.9,.5,.7,col);for(const dx of [-.34,.34])for(const dz of [-.23,.23])box(x+dx,y-.0,z+dz,.08,.45,.08,'#67452f')}
+ else if(i===3){box(x,y,z,.95,.54,.72,col);box(x,y+.48,z-.25,.95,.48,.18,col);box(x-.4,y+.18,z,.16,.43,.72,shade(col,.8));box(x+.4,y+.18,z,.16,.43,.72,shade(col,.8))}
+ else if(i===4){box(x,y,z,.95,.67,.16,'#242a33');box(x,y+.1,z-.09,.79,.45,.025,'#67cbe6');box(x,y-.03,z+.12,.12,.26,.16,'#333b46')}
+ else if(i===5){box(x,y,z,.75,1.25,.7,col);box(x,y+.2,z-.36,.035,.08,.025,'#3e5860');box(x,y+.55,z-.36,.035,.08,.025,'#3e5860')}
+ else if(i===6){box(x,y,z,1.4,.35,1.9,col);box(x,y+.22,z-.72,1.35,.23,.35,'#f7e8d2')}
+ else if(i===7){box(x,y,z,.8,1.2,.6,col);box(x,y+1.2,z,.85,.12,.65,shade(col,1.2));box(x-.2,y+.4,z-.31,.04,.12,.02,'#ffdf8a');box(x+.2,y+.4,z-.31,.04,.12,.02,'#ffdf8a')}
+ else if(i===8){box(x,y,z,1.2,.5,.8,col);box(x,y+.5,z,.9,.5,.4,shade(col,.8));box(x,y+1,z,.12,.2,.12,'#272c39')}
+ else{box(x,y,z,.9,.65,.75,col);box(x,y+.65,z,.95,.14,.82,shade(col,1.18));box(x,y+.72,z-.3,.65,.55,.15,col);box(x-.43,y,z,.12,.5,.75,shade(col,.75));box(x+.43,y,z,.12,.5,.75,shade(col,.75))}
+ label(names[i]+' · '+values[i],x,y+1.42,z,'#fff8de');
+}
+function drawPlaced(item){
+ const slot=item.slot||0,x=-11.7+(slot%3)*1.7,z=6.3+Math.floor(slot/3)*1.7;
+ const copy={...item,x,z};drawFurniture(copy);
+}
+function drawPlayer(){
+ const yaw=player.yaw,walk=Math.sin(walking*10)*.14*(Math.abs(stickX)+Math.abs(stickY)>.12?1:0);
+ function part(lx,baseY,lz,w,h,d,color){const c=Math.cos(yaw),s=Math.sin(yaw);box(player.x+lx*c+lz*s,baseY,player.z+lx*s-lz*c,w,h,d,color,yaw)}
+ // a recognizable blocky R6-style avatar, facing the direction of travel
+ const bob=Math.abs(walk)*.32;
+ // shadow
+ const p=project(player.x,.02,player.z);
+ if(p.depth>0.5){ctx.fillStyle='#182b2b44';ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(10,p.scale*.28),Math.max(4,p.scale*.10),0,0,Math.PI*2);ctx.fill()}
+ part(0,.88-bob,0,.66,.88,.38,'#2766d8'); // torso / blue hoodie
+ part(0,1.79-bob,0,.5,.5,.48,'#f1be91'); // head
+ part(0,2.04-bob,-.015,.52,.13,.51,'#493325'); // hair
+ part(0,1.96-bob,-.23,.42,.12,.08,'#493325'); // hair fringe
+ // arms swing opposite each other
+ part(-.43,.91-bob,-walk,.22,.76,.24,'#f1be91');
+ part(.43,.91-bob,walk,.22,.76,.24,'#f1be91');
+ part(-.19,.12+Math.max(0,walk)*.3,-walk,.25,.64,.28,'#25364b');
+ part(.19,.12+Math.max(0,-walk)*.3,walk,.25,.64,.28,'#25364b');
+ // face stays on the front of the head
+ part(-.11,1.91-bob,-.252,.055,.06,.018,'#25364b');
+ part(.11,1.91-bob,-.252,.055,.06,.018,'#25364b');
+ if(player.carry){const item=player.carry;part(.48,1.18,-.25,.34,.32,.28,colors[item.i]);if(player.carryExtra)part(-.48,1.2,-.25,.32,.3,.28,colors[player.carryExtra.i])}
+ label('YOU',player.x,2.4,player.z,'#ffffff');
+}
+function drawWorld(){
+ const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#71c7e4');sky.addColorStop(.5,'#c7edf2');sky.addColorStop(.51,'#91c985');sky.addColorStop(1,'#6eae67');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ ground();drawHouse();plaza();drawTreadmill();
+ // small props around the neighbourhood help show distance and scale
+ for(const [x,z] of [[-16,-15],[-12,-19],[14,-15],[17,-8],[-17,0],[14,8],[-17,11],[13,18]])tree(x,z);
+ const all=[];
+ furniture.filter(f=>!f.taken).forEach(f=>all.push({z:f.z,draw:()=>drawFurniture(f)}));
+ player.inventory.filter(f=>f.placed).forEach(f=>all.push({z:6.3+Math.floor((f.slot||0)/3)*1.7,draw:()=>drawPlaced(f)}));
+ all.push({z:player.z,draw:drawPlayer});
+ all.sort((a,b)=>b.z-a.z).forEach(o=>o.draw());
+}
+function nearestFurniture(){let candidates=furniture.filter(f=>!f.taken).sort((a,b)=>d2(player,a)-d2(player,b));return candidates[0]&&d2(player,candidates[0])<2.4?candidates[0]:null}
+function refreshUI(){
+ $('coins').textContent=Math.floor(player.coins);$('speed').textContent=player.speed.toFixed(1);$('level').textContent='Lv.'+player.level;
+ $('carry').textContent=player.carry?names[player.carry.i]+(player.carryExtra?' +1':''):'None';
+ const next=player.level<10?prices[player.level]:'MAX';
+ $('shoptext').innerHTML='Level '+player.level+'/10<br>Speed multiplier: ×'+gain[player.level-1]+'<br>Next level: '+(next==='MAX'?'MAX LEVEL':next+' coins');
+ $('upgrade').textContent=player.level>=10?'Treadmill MAX':'Upgrade · '+prices[player.level]+' coins';
+ $('upgrade').disabled=player.level>=10||player.coins<prices[player.level];$('shoes').disabled=player.shoes>0||player.coins<180;$('bag').disabled=player.bag>1||player.coins<250;
+}
+function interact(){
+ if(player.carry&&homeArea()){
+  const delivered=player.carry;player.coins+=values[delivered.i];player.inventory.push({i:delivered.i,slot:player.inventory.filter(f=>f.placed).length%9,placed:false});player.carry=player.carryExtra||null;player.carryExtra=null;
+  // Restock the plaza with a new furniture type, so the run keeps progressing.
+  const oldSpot={x:delivered.x,z:delivered.z};const idx=spawnIndex++%10;furniture.push(makeF(idx,oldSpot.x,oldSpot.z));
+  saveGame();toast('Delivered '+names[delivered.i]+' · +'+values[delivered.i]+' coins');return;
+ }
+ if(!player.carry&&homeArea()){
+  const item=player.inventory.find(f=>!f.placed);
+  if(item){item.slot=player.inventory.filter(f=>f.placed).length%9;item.placed=true;saveGame();toast('Decorated your home with '+names[item.i]+'!');return}
+ }
+ const f=nearestFurniture();
+ if(f&&(!player.carry||(player.bag>1&&!player.carryExtra))){
+  f.taken=true;f.x=f.x;f.z=f.z; if(!player.carry)player.carry=f;else player.carryExtra=f;
+  toast('Picked up '+names[f.i]+'! Take it home.');return;
+ }
+ if(treadmillArea()){player.train=true;toast('Hold INTERACT while on the treadmill to train.');return}
+ toast(player.carry?'Take the furniture inside your home.':'Walk close to a furniture item to pick it up.');
+}
+$('upgrade').onclick=()=>{if(player.level>=10)return;const cost=prices[player.level];if(player.coins<cost)return toast('Not enough coins yet.');player.coins-=cost;player.level++;player.speed=Math.max(player.speed,1+(player.level-1)*.35+player.shoes*.5);saveGame();refreshUI();toast('Treadmill upgraded to level '+player.level+'!')};
+$('shoes').onclick=()=>{if(player.shoes||player.coins<180)return;player.coins-=180;player.shoes=1;player.speed+=.5;saveGame();refreshUI();toast('Speed shoes equipped!')};
+$('bag').onclick=()=>{if(player.bag>1||player.coins<250)return;player.coins-=250;player.bag=2;saveGame();refreshUI();toast('Your bag now carries two items!')};
+const stick=$('stick'),nub=$('nub');let stickPointer=null;
+function setStick(e){const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.33,L=Math.hypot(dx,dy);if(L>max){dx=dx/L*max;dy=dy/L*max}stickX=dx/max;stickY=dy/max;nub.style.transform='translate('+dx+'px,'+dy+'px)'}
+stick.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;stick.setPointerCapture(e.pointerId);setStick(e)});
+stick.addEventListener('pointermove',e=>{if(e.pointerId===stickPointer){e.preventDefault();setStick(e)}});
+function releaseStick(e){if(stickPointer===e.pointerId){stickPointer=null;stickX=0;stickY=0;nub.style.transform='translate(0,0)'}}
+stick.addEventListener('pointerup',releaseStick);stick.addEventListener('pointercancel',releaseStick);stick.addEventListener('lostpointercapture',()=>{stickPointer=null;stickX=stickY=0;nub.style.transform='translate(0,0)'});
+let actPointer=null;
+$('act').addEventListener('pointerdown',e=>{e.preventDefault();actPointer=e.pointerId;$('act').setPointerCapture(e.pointerId);if(treadmillArea()){keys.e=true;player.train=true}else interact()});
+$('act').addEventListener('pointerup',e=>{if(actPointer===e.pointerId){actPointer=null;keys.e=false;player.train=false}});
+$('act').addEventListener('pointercancel',()=>{actPointer=null;keys.e=false;player.train=false});
+function keyName(k){return k.toLowerCase()}
+addEventListener('keydown',e=>{const k=keyName(e.key);if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='e'&&!keys.e){if(!treadmillArea())interact();else player.train=true}keys[k]=true});
+addEventListener('keyup',e=>{keys[keyName(e.key)]=false;if(keyName(e.key)==='e')player.train=false});
+let mouseDown=false,lastPointerX=0,lastPointerY=0;
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.clientX<W*.66){return}mouseDown=true;lastPointerX=e.clientX;lastPointerY=e.clientY;if(canvas.setPointerCapture)try{canvas.setPointerCapture(e.pointerId)}catch(_){}});
+canvas.addEventListener('pointermove',e=>{if(mouseDown){const dx=e.clientX-lastPointerX,dy=e.clientY-lastPointerY;camYaw+=dx*.006;lastPointerX=e.clientX;lastPointerY=e.clientY}});
+function stopCam(){mouseDown=false}canvas.addEventListener('pointerup',stopCam);canvas.addEventListener('pointercancel',stopCam);
+let last=performance.now();
+function update(dt,now){
+ let mx=stickX,my=stickY;
+ if(keys.a||keys.arrowleft)mx-=1;if(keys.d||keys.arrowright)mx+=1;
+ if(keys.w||keys.arrowup)my-=1;if(keys.s||keys.arrowdown)my+=1;
+ const mag=Math.hypot(mx,my);if(mag>1){mx/=mag;my/=mag}
+ const fx=Math.sin(camYaw),fz=-Math.cos(camYaw),rx=Math.cos(camYaw),rz=Math.sin(camYaw);
+ const vx=rx*mx+fx*(-my),vz=rz*mx+fz*(-my);
+ if(Math.hypot(vx,vz)>.08){
+  const speedFactor=(keys.shift?1.38:1)*player.speed;
+  player.x+=vx*speedFactor*3.0*dt;player.z+=vz*speedFactor*3.0*dt;
+  player.yaw=Math.atan2(vx,-vz);walking+=dt*speedFactor*3.5;
+ }
+ player.x=Math.max(-23,Math.min(23,player.x));player.z=Math.max(-22,Math.min(23,player.z));
+ if(treadmillArea()&&keys.e){player.speed=Math.min(8,player.speed+dt*.16*gain[player.level-1]);player.train=true}
+ else if(!keys.e)player.train=false;
+ saveClock+=dt;if(saveClock>3){saveClock=0;saveGame()}
+ incomeClock+=dt;if(incomeClock>=1){incomeClock-=1;const count=player.inventory.filter(f=>f.placed).length;if(count)player.coins+=count*2}
+ if(now<toastTimer){}else $('toast').classList.remove('show');
+ refreshUI();
+}
+function loop(now){const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;update(dt,now);drawWorld();requestAnimationFrame(loop)}
+refreshUI();requestAnimationFrame(loop);
 })();
 </script>
-</body></html>
+</body>
+</html>
