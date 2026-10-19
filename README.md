@@ -1,20 +1,19 @@
 # FurniHeist3D — 3D version
 
-The game renders with Three.js/WebGL and loads the supplied 17 GLB files: the full map, player, treadmill, 9 furniture models and 5 monsters. The APK workflow reconstructs the packed model bundle into the Android asset directory before compiling, so the GLB files are included in the APK.
+The game bundles Three.js r170 and GLTFLoader locally in `vendor/`; it does not need to fetch the 3D engine from a CDN. The Android app serves packaged files from a local HTTPS origin so module imports and GLB requests work in Android WebView without internet access.
 
 ## Gameplay
-- Explore five guarded furniture zones.
-- Pick furniture up, carry it home and sell it for coins.
-- Place furniture in the house to earn passive income.
-- Upgrade the treadmill to level 10, buy speed shoes and expand the carry bag.
-- Touch joystick, interact button and drag-to-rotate camera for mobile play.
-
-## Build APK
-Every push to `main` starts **Build FurniHeist3D 3D Android APK**. Open the repository's **Actions** tab and download the `FurniHeist3D-3D-APK` artifact from the latest successful run.
-
-The renderer loads the Three.js ES modules from jsDelivr, so the device needs internet access to load the engine. The 17 GLB assets are packaged locally in the APK.
+- Explore five guarded furniture zones in order: Mouse, Cat, Baby, Mom and Dad.
+- Return furniture to the safe base to sell it for coins or keep it to decorate the base.
+- Place, move, rotate and store furniture inside the base; placed furniture earns passive income.
+- Train on the treadmill, upgrade it, buy speed shoes and expand the carry bag.
+- Zone Speed gates and monster Speed values are randomized from 10 to 1,000,000 and saved.
+- Mobile joystick, interaction button, jump, camera orbit and pinch zoom.
 
 ## Controls
-- Desktop: WASD / arrow keys, Shift to sprint, E to interact, drag to rotate.
-- Mobile: use the joystick and INTERACT button.
-- Hold INTERACT while on the treadmill to train.
+- Desktop: WASD / arrow keys, Space to jump, Shift to sprint, E to interact.
+- Desktop camera: drag to orbit and mouse wheel to zoom.
+- Mobile: joystick to move, INTERACT to pick up/sell/train; drag to orbit and pinch to zoom.
+
+## Build
+Push to `main` starts both the web and Android APK workflows. The latest successful APK artifact is named `FurniHeist3D-3D-APK`; the web artifact is named `FurniHeist3D-web-build`. Three.js is MIT-licensed; see `vendor/THREE-LICENSE.txt`.

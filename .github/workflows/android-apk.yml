@@ -30,7 +30,12 @@ jobs:
           unzip -oq /tmp/furni-models.zip -d /tmp/furni-models-extracted
           cp -a /tmp/furni-models-extracted/models3d/. models3d/
           cp -a /tmp/furni-models-extracted/models3d/. app/src/main/assets/models3d/
+          mkdir -p app/src/main/assets/vendor
+          cp -a vendor/. app/src/main/assets/vendor/
           test "$(find app/src/main/assets/models3d -type f -name '*.glb' | wc -l)" -eq 17
+          test -s app/src/main/assets/vendor/three.module.js
+          test -s app/src/main/assets/vendor/GLTFLoader.js
+          test -s app/src/main/assets/vendor/BufferGeometryUtils.js
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4

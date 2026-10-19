@@ -50,12 +50,19 @@ jobs:
           print(f"Validated WebGL game ({len(html)} characters) and 17 GLB files")
           PY
           node --check /tmp/furniheist3d.mjs
+          node --check vendor/three.module.js
+          node --check vendor/GLTFLoader.js
+          node --check vendor/BufferGeometryUtils.js
+          test -s vendor/three.module.js
+          test -s vendor/GLTFLoader.js
+          test -s vendor/BufferGeometryUtils.js
 
       - name: Package browser game
         run: |
           mkdir -p dist
           cp index.html README.md dist/
           cp -a models3d dist/models3d
+          cp -a vendor dist/vendor
           cd dist
           zip -qr ../FurniHeist3D-web.zip .
 
