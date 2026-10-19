@@ -86,7 +86,7 @@ const colors=['#b97746','#f3d56c','#9a6c49','#c56d62','#2b3340','#a7c3cc','#536d
 const player={x:0,z:3,yaw:0,speed:1,coins:250,level:1,shoes:0,bag:1,carry:null,carryExtra:null,inventory:[],train:false};
 let camYaw=0,stickX=0,stickY=0,walking=0,elapsed=0,saveClock=0,incomeClock=0,toastTimer=0,spawnIndex=0,camDrag=false,dragX=0,dragY=0;
 function saveGame(){try{localStorage.setItem('furniHeistSaveV2',JSON.stringify({coins:player.coins,speed:player.speed,level:player.level,shoes:player.shoes,bag:player.bag,inventory:player.inventory,spawnIndex}))}catch(e){}}
-try{let old=JSON.parse(localStorage.getItem('furniHeistSaveV2')||'null');if(old){player.coins=Number(old.coins??250);player.speed=Number(old.speed??1);player.level=Math.max(1,Math.min(10,Number(old.level??1)));player.shoes=Number(old.shoes??0);player.bag=Math.max(1,Math.min(2,Number(old.bag??1)));player.inventory=Array.isArray(old.inventory)?old.inventory:[];spawnIndex=Number(old.spawnIndex||0)}}catch(e){}
+try{let old=JSON.parse(localStorage.getItem('furniHeistSaveV2')||localStorage.getItem('furniHeistSave')||'null');if(old){player.coins=Number(old.coins??250);player.speed=Number(old.speed??1);player.level=Math.max(1,Math.min(10,Number(old.level??1)));player.shoes=Number(old.shoes??0);player.bag=Math.max(1,Math.min(2,Number(old.bag??1)));player.inventory=Array.isArray(old.inventory)?old.inventory:(Array.isArray(old.placed)?old.placed:[]);spawnIndex=Number(old.spawnIndex||0)}}catch(e){}
 function toast(text){const el=$('toast');el.textContent=text;el.classList.add('show');toastTimer=performance.now()+1800}
 function d2(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
 function homeArea(){return player.x>-15.1&&player.x<-5.2&&player.z>3.3&&player.z<13.3}
@@ -94,16 +94,23 @@ function treadmillArea(){return Math.hypot(player.x-6,player.z-3.5)<2.3}
 function makeF(i,x,z){return {i,x,z,taken:false}}
 let furniture=[];
 for(let i=0;i<10;i++)furniture.push(makeF(i,-7+(i%5)*3.5,-5-Math.floor(i/5)*3.1));
+const camera={x:0,y:0,z:0,dx:0,dy:0,dz:0,rx:1,rz:0,ux:0,uy:1,uz:0,focal:1};
+function prepareCamera(){
+ const s=Math.sin(camYaw),c=Math.cos(camYaw);
+ const tx=player.x+s*2.2,tz=player.z-c*2.2,ty=1.35;
+ camera.x=player.x-s*7.5;camera.y=5.4;camera.z=player.z+c*7.5;
+ let dx=tx-camera.x,dy=ty-camera.y,dz=tz-camera.z,L=Math.hypot(dx,dy,dz)||1;
+ dx/=L;dy/=L;dz/=L;camera.dx=dx;camera.dy=dy;camera.dz=dz;
+ camera.rx=c;camera.rz=s;
+ const u=rycross(camera.rx,camera.rz,dx,dy,dz);
+ camera.ux=u[0];camera.uy=u[1];camera.uz=u[2];camera.focal=Math.min(W,H)*1.12;
+}
 function project(x,y,z){
- const fy=1.35,fx=player.x+Math.sin(camYaw)*2.2,fz=player.z-Math.cos(camYaw)*2.2;
- const cx=player.x-Math.sin(camYaw)*7.5,cy=5.4,cz=player.z+Math.cos(camYaw)*7.5;
- let dx=fx-cx,dy=fy-cy,dz=fz-cz,L=Math.hypot(dx,dy,dz)||1;dx/=L;dy/=L;dz/=L;
- const rx=Math.cos(camYaw),rz=Math.sin(camYaw);
- const ux=rycross(rx,rz,dx,dy,dz);
- const ax=x-cx,ay=y-cy,az=z-cz;
- const sx=ax*rx+az*rz,sy=ax*ux[0]+ay*ux[1]+az*ux[2],depth=ax*dx+ay*dy+az*dz;
- const focal=Math.min(W,H)*1.12;
- return {x:W*.5+sx*focal/Math.max(.2,depth),y:H*.47-sy*focal/Math.max(.2,depth),depth,scale:focal/Math.max(.2,depth)};
+ const ax=x-camera.x,ay=y-camera.y,az=z-camera.z;
+ const sx=ax*camera.rx+az*camera.rz;
+ const sy=ax*camera.ux+ay*camera.uy+az*camera.uz;
+ const depth=ax*camera.dx+ay*camera.dy+az*camera.dz,d=Math.max(.2,depth),f=camera.focal;
+ return {x:W*.5+sx*f/d,y:H*.47-sy*f/d,depth,scale:f/d};
 }
 function rycross(rx,rz,dx,dy,dz){return [-rz*dy,rz*dx-rx*dz,rx*dy]}
 function polyWorld(points,color,stroke=null){
@@ -147,7 +154,7 @@ function label(text,x,y,z,color='#fff4cf'){
 function ground(){
  const tiles=[];
  const sx=Math.floor(player.x/4),sz=Math.floor(player.z/4);
- for(let ix=sx-9;ix<=sx+9;ix++)for(let iz=sz-12;iz<=sz+8;iz++){
+ for(let ix=sx-6;ix<=sx+6;ix++)for(let iz=sz-10;iz<=sz+5;iz++){
   const x=ix*4,z=iz*4,corners=[[x,0,z],[x+4,0,z],[x+4,0,z+4],[x,0,z+4]],ps=corners.map(p=>project(...p));
   if(ps.some(p=>p.depth<.3))continue;
   tiles.push({z:ps.reduce((n,p)=>n+p.depth,0)/4,corners,col:((ix+iz)&1)?'#80bd74':'#78b76e'});
@@ -238,6 +245,7 @@ function drawPlayer(){
  label('YOU',player.x,2.4,player.z,'#ffffff');
 }
 function drawWorld(){
+ prepareCamera();
  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#71c7e4');sky.addColorStop(.5,'#c7edf2');sky.addColorStop(.51,'#91c985');sky.addColorStop(1,'#6eae67');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
  ground();drawHouse();plaza();drawTreadmill();
  // small props around the neighbourhood help show distance and scale
